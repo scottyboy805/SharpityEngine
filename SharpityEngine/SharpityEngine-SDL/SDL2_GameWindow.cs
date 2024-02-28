@@ -72,10 +72,7 @@ namespace SharpityEngine_SDL
 
             // Check for fullscreen
             if (fullscreen == true)
-            {
                 windowFlags |= SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP;
-                fullscreen = true;
-            }
 
             //// Check for Open Gl context required
             //if (useOpenGL == true)
@@ -89,7 +86,7 @@ namespace SharpityEngine_SDL
             //    SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_FLAGS, (int)SDL.SDL_GLcontext.SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
             //    SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_DOUBLEBUFFER, 1);
             //}
-
+                        
             // Create the window
             this.windowPtr = SDL.SDL_CreateWindow(title, 0x2FFF0000, 0x2FFF0000, width, height, windowFlags);
 
@@ -101,41 +98,64 @@ namespace SharpityEngine_SDL
             this.windowId = SDL.SDL_GetWindowID(windowPtr);
 
             // Window position
-            //SDL.SDL_GetWindowPosition(windowPtr, out position.X, out position.Y);
+            Point2 position = default;
+            SDL.SDL_GetWindowPosition(windowPtr, out position.X, out position.Y);
+
+            // Trigger callback
+            OnRepositionedCallbackEvent(position);
         }
 
         // Methods
         internal void PlatformWindowEvent(SDL.SDL_WindowEvent e)
         {
-            //switch (e.windowEvent)
-            //{
-            //    // Call resized
-            //    case SDL.SDL_WindowEventID.SDL_WINDOWEVENT_RESIZED:
-            //        //case SDL.SDL_WindowEventID.SDL_WINDOWEVENT_SIZE_CHANGED:
-            //        OnResizedCallback();
-            //        break;
+            switch (e.windowEvent)
+            {
+                // Call resized
+                case SDL.SDL_WindowEventID.SDL_WINDOWEVENT_RESIZED:
+                //case SDL.SDL_WindowEventID.SDL_WINDOWEVENT_SIZE_CHANGED:
+                    {
+                        // Get new size
+                        Point2 point = default;
+                        SDL.SDL_GetWindowSize(windowPtr, out point.X, out point.Y);
 
-            //    // Call closing
-            //    case SDL.SDL_WindowEventID.SDL_WINDOWEVENT_CLOSE:
-            //        OnClosingCallback();
-            //        break;
+                        // Trigger callback
+                        OnResizedCallbackEvent(point);
+                        break;
+                    }
 
-            //    // Call restored
-            //    case SDL.SDL_WindowEventID.SDL_WINDOWEVENT_RESTORED:
-            //        OnRestoredCallback();
-            //        break;
+                // Call closing
+                case SDL.SDL_WindowEventID.SDL_WINDOWEVENT_CLOSE:
+                    {
+                        // Trigger callback
+                        OnClosingCallbackEvent();
+                        break;
+                    }
 
-            //    // Call minimized
-            //    case SDL.SDL_WindowEventID.SDL_WINDOWEVENT_MINIMIZED:
-            //        OnMinimizedCallback();
-            //        break;
+                // Call restored
+                case SDL.SDL_WindowEventID.SDL_WINDOWEVENT_RESTORED:
+                    {
+                        // Trigger callback
+                        OnRestoredCallbackEvent();
+                        break;
+                    }
 
-            //    // Call onFocus
-            //    case SDL.SDL_WindowEventID.SDL_WINDOWEVENT_TAKE_FOCUS:
-            //    case SDL.SDL_WindowEventID.SDL_WINDOWEVENT_FOCUS_GAINED:
-            //        OnFocusedCallback();
-            //        break;
-            //};
+                // Call minimized
+                case SDL.SDL_WindowEventID.SDL_WINDOWEVENT_MINIMIZED:
+                    {
+                        // Trigger callback
+                        OnMinimizedCallbackEvent();
+                        break;
+                    }
+
+                // Call onFocus
+                case SDL.SDL_WindowEventID.SDL_WINDOWEVENT_TAKE_FOCUS:
+                case SDL.SDL_WindowEventID.SDL_WINDOWEVENT_FOCUS_GAINED:
+                    {
+                        // Trigger callback
+                        OnFocusedCallbackEvent();
+                        break;
+                    }
+            };
         }
 
         //public override bool SetDisplayMode(DisplayResolution resolution)
@@ -178,7 +198,7 @@ namespace SharpityEngine_SDL
             // Check for Open gl render backend
             //if (Platform.GraphicsBackend == Simple2D.Graphics.GraphicsBackend.OpenGL)
             {
-                SDL.SDL_GL_SwapWindow(windowPtr);
+                //SDL.SDL_GL_SwapWindow(windowPtr);
             }
         }
 
@@ -221,23 +241,6 @@ namespace SharpityEngine_SDL
         protected override void OnSetTitle(string title)
         {
             SDL.SDL_SetWindowTitle(windowPtr, title);
-        }
-
-        protected override void OnSetVisible(bool on)
-        {
-            if (on == true)
-            {
-                SDL.SDL_ShowWindow(windowPtr);
-            }
-            else
-            {
-                SDL.SDL_HideWindow(windowPtr);
-            }
-        }
-
-        protected override void OnSetVSync(bool on)
-        {
-
         }
     }
 }

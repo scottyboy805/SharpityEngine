@@ -4,6 +4,7 @@ namespace SharpityEngine
     public abstract class GameWindow
     {
         // Events        
+        public GameEvent<Point2> OnRepositioned = new GameEvent<Point2>();
         public GameEvent<Point2> OnResized = new GameEvent<Point2>();
         public GameEvent OnRestored = new GameEvent();
         public GameEvent OnMinimized = new GameEvent();
@@ -18,8 +19,6 @@ namespace SharpityEngine
         private bool bordered = false;
         private bool resizable = false;
         private bool fullscreen = false;
-        private bool visible = false;
-        private bool vsync = false;
 
         // Properties
         public abstract IntPtr Handle { get; }
@@ -141,36 +140,6 @@ namespace SharpityEngine
             }
         }
 
-        public bool Visible
-        {
-            get { return visible; }
-            set
-            {
-                if (this.visible != value)
-                {
-                    this.visible = value;
-
-                    // Call impl
-                    OnSetVisible(visible);
-                }
-            }
-        }
-
-        public bool VSync
-        {
-            get { return vsync; }
-            set
-            {
-                if (this.vsync != value)
-                {
-                    this.vsync = value;
-
-                    // Call impl
-                    OnSetVSync(vsync);
-                }
-            }
-        }
-
         public abstract bool Focused { get; }
 
         // Constructor
@@ -183,6 +152,12 @@ namespace SharpityEngine
         }
 
         // Methods
+        public abstract void Focus();
+
+        public abstract void Close();
+
+        public abstract void SwapBuffers();
+
         protected abstract void OnSetPosition(in Point2 position);
 
         protected abstract void OnSetSize(in Point2 size);
@@ -195,14 +170,46 @@ namespace SharpityEngine
 
         protected abstract void OnSetFullscreen(bool on);
 
-        protected abstract void OnSetVisible(bool on);
+        #region Callback
+        protected void OnRepositionedCallbackEvent(Point2 position)
+        {
+            this.position = position;
 
-        protected abstract void OnSetVSync(bool on);
+            // Raise event
+            OnRepositioned.Raise(position);
+        }
 
-        public abstract void Focus();
+        protected void OnResizedCallbackEvent(Point2 size)
+        {
+            this.size = size;
 
-        public abstract void Close();
+            // Raise event
+            OnResized.Raise(size);
+        }
 
-        public abstract void SwapBuffers();
+        protected void OnClosingCallbackEvent()
+        {
+            // Raise event
+            OnClosing.Raise();
+        }
+
+        protected void OnRestoredCallbackEvent()
+        {
+            // Raise event
+            OnRestored.Raise();
+        }
+
+        protected void OnMinimizedCallbackEvent()
+        {
+            // Raise event
+            OnMinimized.Raise();
+        }
+
+        protected void OnFocusedCallbackEvent()
+        {
+            // Raise event
+            OnFocused.Raise();
+        }
+        #endregion
     }
 }

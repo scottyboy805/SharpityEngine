@@ -82,16 +82,19 @@ namespace SharpityEngine_SDL
                 {
                     // Quit
                     case SDL.SDL_EventType.SDL_QUIT:
-                        GameProvider.Exit(0);
-                        return;
+                        {
+                            GameProvider.Exit(0);
+                            return;
+                        }
 
                     // Window Event
                     case SDL.SDL_EventType.SDL_WINDOWEVENT:
                         {
                             // Send event to window
                             sdlWindow.PlatformWindowEvent(e.window);
+                            break;
                         }
-                        break;
+                        
 
                     // Input Events
                     //case SDL.SDL_EventType.SDL_KEYDOWN:
@@ -154,8 +157,10 @@ namespace SharpityEngine_SDL
                     //        break;
                     //    }
                     case SDL.SDL_EventType.SDL_CONTROLLERDEVICEREMAPPED:
-                        //input.ProcessEvent(e);
-                        break;
+                        {
+                            //input.ProcessEvent(e);
+                            break;
+                        }
                 }
 
 
