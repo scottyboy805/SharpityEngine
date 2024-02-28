@@ -1,9 +1,11 @@
 ﻿using SDL2;
 using SharpityEngine;
+using SharpityEngine.Graphics.Context;
+using System.Diagnostics;
 
 namespace SharpityEngine_SDL
 {
-    internal sealed class SDL2_GameWindow : GameWindow
+    internal sealed class SDL2_GameWindow : GameWindow, IGraphicsContext_WindowsNative
     {
         // Internal
         internal IntPtr windowPtr;
@@ -61,6 +63,16 @@ namespace SharpityEngine_SDL
                 // Check for flag set
                 return (flags & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_INPUT_FOCUS) != 0;
             }
+        }
+
+        public int RenderWidth
+        {
+            get { return Size.X; }
+        }
+
+        public int RenderHeight
+        {
+            get { return Size.Y; }
         }
 
         // Constructor
@@ -242,5 +254,22 @@ namespace SharpityEngine_SDL
         {
             SDL.SDL_SetWindowTitle(windowPtr, title);
         }
+
+
+        #region IGraphicsContext_NativeWindows
+        void IGraphicsContext_WindowsNative.GetWindowNative(out nint hinstance, out nint hwnd)
+        {
+            // Get wm version
+            SDL.SDL_SysWMinfo wmInfo = default;
+            SDL.SDL_GetWindowWMInfo(windowPtr, ref wmInfo);
+
+            // Get hinstance
+            //hinstance = wmInfo.info.win.hdc;
+            hinstance = Process.GetCurrentProcess().Handle;
+
+            // Get HWND
+            hwnd = wmInfo.info.win.window;
+        }
+        #endregion
     }
 }

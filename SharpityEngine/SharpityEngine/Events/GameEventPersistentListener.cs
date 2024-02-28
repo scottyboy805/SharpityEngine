@@ -9,14 +9,14 @@ namespace SharpityEngine
     {
         // Private
         [DataMember(Name = "InvokeElement")]
-        private Object invokeElement = null;
+        private GameElement invokeElement = null;
         [DataMember(Name = "MethodDeclaringType")]
         private string methodDeclaringType = "";
         [DataMember(Name = "InvokeElement")]
         private string methodName = "";
 
         // Properties
-        public Object TargetElement
+        public GameElement TargetElement
         {
             get { return invokeElement; }
         }
@@ -29,7 +29,7 @@ namespace SharpityEngine
         // Constructor
         internal GameEventPersistentListener() { }
 
-        internal GameEventPersistentListener(Object targetInstance, MethodInfo targetMethod)
+        internal GameEventPersistentListener(GameElement targetInstance, MethodInfo targetMethod)
             : base(targetInstance, targetMethod)
         {
             // Check for target method

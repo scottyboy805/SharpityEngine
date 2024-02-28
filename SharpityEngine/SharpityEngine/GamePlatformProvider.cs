@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using SharpityEngine.Graphics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("SharpityEngine-SDL")]
@@ -38,7 +39,7 @@ namespace SharpityEngine
             return string.Format("{0}({1}, {2})", typeof(GamePlatformProvider).FullName, APIName, APIVersion);
         }
 
-        public virtual void Initialize()
+        public virtual async Task InitializeAsync()
         {
             Debug.Log("Startup...");
             Debug.Log("Backend name: " + APIName);
@@ -124,8 +125,22 @@ namespace SharpityEngine
             // Create game window
             GameWindow window = CreateWindow(gameSettings.GameName, screenWidth, screenHeight, fullscreen);
 
+            Debug.Log(LogFilter.Graphics, "Window width: " + window.Width);
+            Debug.Log(LogFilter.Graphics, "Window height: " + window.Height);
+            Debug.Log(LogFilter.Graphics, "Window fullscreen: " + window.Fullscreen);
+
+
+            // Create graphics device
+            GraphicsAdapter adapter = await GraphicsAdapter.CreateAsync(window, GraphicsBackend.Default, GraphicsPowerMode.HighPower);
+            GraphicsDevice device = null;
+
+            // Create device
+            if (adapter != null)
+                device = await adapter.RequestDeviceAsync();
+
+
             // Create the game provider
-            gameProvider = CreateGame(window);
+            gameProvider = CreateGame(window, device);
 
             // Initialize the game
             gameProvider.DoGameInitialize();
@@ -163,7 +178,7 @@ namespace SharpityEngine
 
         public abstract GameWindow CreateWindow(string title, int width, int height, bool fullscreen);
 
-        public abstract Game CreateGame(GameWindow window);
+        public abstract Game CreateGame(GameWindow window, GraphicsDevice device);
 
         public abstract void OpenURL(string url);
     }

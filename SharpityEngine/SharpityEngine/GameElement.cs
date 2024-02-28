@@ -3,7 +3,7 @@ using System.Runtime.Serialization;
 
 namespace SharpityEngine
 {
-    public abstract class Object
+    public abstract class GameElement
     {
         // Events
         public readonly GameEvent OnWillDestroy = new GameEvent();
@@ -14,6 +14,7 @@ namespace SharpityEngine
         private bool isDestroying = false;
         private bool isDestroyed = false;
 
+        private string name = "";
         private string type = "";
         private string guid = "";
         private string contentPath = "";
@@ -22,7 +23,7 @@ namespace SharpityEngine
         protected readonly object syncLock = new object();
 
         // Internal
-        internal static ConstructorInfo initializer = typeof(Object).GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, System.Type.EmptyTypes, null);
+        internal static ConstructorInfo initializer = typeof(GameElement).GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, System.Type.EmptyTypes, null);
 
         internal bool isReadOnly = false;
         internal Type elementType = null;
@@ -42,6 +43,13 @@ namespace SharpityEngine
         public bool IsDestroyed
         {
             get { return isDestroyed; }
+        }
+
+        [DataMember]
+        public string Name
+        {
+            get { return name; }
+            set { name = value; }
         }
 
         [DataMember]
@@ -119,7 +127,7 @@ namespace SharpityEngine
         //}
 
         // Constructor
-        protected Object()
+        protected GameElement()
         {
             game = GameProvider.Current;
 
@@ -139,6 +147,9 @@ namespace SharpityEngine
             {
                 elementType = GetType();
             }
+
+            // Get name
+            name = elementType.Name;
         }
 
         // Methods
@@ -214,7 +225,7 @@ namespace SharpityEngine
         //    return result;
         //}
 
-        //protected virtual void OnDestroy() { }
+        protected virtual void OnDestroy() { }
 
         ///// <summary>
         ///// Destroy this element immediately.

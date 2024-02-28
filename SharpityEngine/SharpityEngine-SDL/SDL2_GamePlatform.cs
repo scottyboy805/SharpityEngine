@@ -1,5 +1,6 @@
 ﻿using SDL2;
 using SharpityEngine;
+using SharpityEngine.Graphics;
 
 namespace SharpityEngine_SDL
 {
@@ -31,10 +32,10 @@ namespace SharpityEngine_SDL
         }
 
         // Methods
-        public async void Run(string[] args)
+        public async void RunAsync(string[] args)
         {
             // Initialize platform
-            Initialize();
+            await InitializeAsync();
 
             // Start game loop
             while(GameProvider.ShouldExit == false)
@@ -52,9 +53,9 @@ namespace SharpityEngine_SDL
             return (sdlWindow = new SDL2_GameWindow(title, width, height, fullscreen));
         }
 
-        public override Game CreateGame(GameWindow window)
+        public override Game CreateGame(GameWindow window, GraphicsDevice graphicsDevice)
         {
-            return new Game(TypeManager, this, window);
+            return new Game(TypeManager, this, window, graphicsDevice);
         }
 
         public override void OpenURL(string url)
@@ -62,7 +63,7 @@ namespace SharpityEngine_SDL
             SDL.SDL_OpenURL(url);
         }
 
-        public override void Initialize()
+        public override async Task InitializeAsync()
         {
             // Init sdl
             if (SDL.SDL_Init(SDL.SDL_INIT_TIMER | SDL.SDL_INIT_VIDEO | SDL.SDL_INIT_JOYSTICK | SDL.SDL_INIT_GAMECONTROLLER | SDL.SDL_INIT_EVENTS) != 0)
@@ -71,7 +72,7 @@ namespace SharpityEngine_SDL
             }
 
             // Update base
-            base.Initialize();
+            await base.InitializeAsync();
         }
 
         public override void Tick()

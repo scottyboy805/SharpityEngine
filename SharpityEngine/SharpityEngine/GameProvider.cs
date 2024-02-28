@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using SharpityEngine.Graphics;
+using System.Diagnostics;
 
 namespace SharpityEngine
 {
@@ -12,11 +13,12 @@ namespace SharpityEngine
         private TypeManager typeManager = null;
         private GamePlatformProvider platform = null;
         private GameWindow window = null;
+        private GraphicsDevice graphicsDevice = null;
 
         private List<IGameUpdate> scheduledStartElements = new List<IGameUpdate>(256);
         private List<IGameUpdate> scheduledUpdateElements = new List<IGameUpdate>(256);
-        private List<Object> scheduledDestroyDelayElements = new List<Object>();
-        private Queue<Object> scheduleDestroyElements = new Queue<Object>();
+        private List<GameElement> scheduledDestroyDelayElements = new List<GameElement>();
+        private Queue<GameElement> scheduleDestroyElements = new Queue<GameElement>();
 
         // Game timer and metrics timers
         private GameTime gameTime = new GameTime();
@@ -59,6 +61,11 @@ namespace SharpityEngine
             get { return window; }
         }
 
+        public GraphicsDevice GraphicsDevice
+        {
+            get { return graphicsDevice; }
+        }
+
         public abstract bool IsHeadless { get; }
 
         public abstract bool IsEditor { get; }
@@ -76,7 +83,7 @@ namespace SharpityEngine
         }
 
         // Constructor
-        internal GameProvider(TypeManager typeManager, GamePlatformProvider platform, GameWindow window)
+        internal GameProvider(TypeManager typeManager, GamePlatformProvider platform, GameWindow window, GraphicsDevice graphicsDevice)
         {
             // Store current instance
             current = this;
@@ -84,6 +91,7 @@ namespace SharpityEngine
             this.typeManager = typeManager;
             this.platform = platform;
             this.window = window;
+            this.graphicsDevice = graphicsDevice;
         }
 
         // Methods
@@ -319,7 +327,7 @@ namespace SharpityEngine
             //}
         }
 
-        internal protected void ScheduleDestruction(Object element)
+        internal protected void ScheduleDestruction(GameElement element)
         {
             // Check for error
             if (element == null || element.IsDestroyed == true)
@@ -329,7 +337,7 @@ namespace SharpityEngine
             scheduleDestroyElements.Enqueue(element);
         }
 
-        internal protected void ScheduleDestruction(Object element, float delay)
+        internal protected void ScheduleDestruction(GameElement element, float delay)
         {
             // Check for error
             if (element == null || element.IsDestroyed == true)

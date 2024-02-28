@@ -118,8 +118,8 @@ namespace SharpityEngine
                 object result = FormatterServices.GetUninitializedObject(type);
 
                 // Run initializer to setup game context
-                if (result is Object)
-                    Object.initializer.Invoke(result, null);
+                if (result is GameElement)
+                    GameElement.initializer.Invoke(result, null);
 
                 return result;
             }
@@ -414,7 +414,7 @@ namespace SharpityEngine
             }
         }
 
-        internal void InitializeElementTypeInstance(Object element)
+        internal void InitializeElementTypeInstance(GameElement element)
         {
             // Initialize members
             DataContract contract = DataContract.ForType(element.elementType);

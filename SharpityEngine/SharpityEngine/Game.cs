@@ -1,4 +1,6 @@
 ﻿
+using SharpityEngine.Graphics;
+
 namespace SharpityEngine
 {
     internal sealed class Game : GameProvider
@@ -22,8 +24,8 @@ namespace SharpityEngine
         }
 
         // Constructor
-        public Game(TypeManager typeManager, GamePlatformProvider platform, GameWindow window)
-            : base(typeManager, platform, window)
+        public Game(TypeManager typeManager, GamePlatformProvider platform, GameWindow window, GraphicsDevice graphicsDevice)
+            : base(typeManager, platform, window, graphicsDevice)
         {
             isRunning = true;
         }

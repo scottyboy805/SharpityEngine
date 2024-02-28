@@ -26,6 +26,10 @@
  */
 #endregion
 
+#pragma warning disable 8603
+#pragma warning disable 8605
+#pragma warning disable 8625
+
 #region Using Statements
 using System;
 using System.Runtime.InteropServices;

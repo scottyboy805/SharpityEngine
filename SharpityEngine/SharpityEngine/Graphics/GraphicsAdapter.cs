@@ -1,12 +1,13 @@
 ﻿using SharpityEngine.Graphics.Context;
+using System.Runtime.InteropServices;
 using WGPU.NET;
 
 namespace SharpityEngine.Graphics
 {
     public struct GraphicsLimits
     {
-        // Private
-        private Wgpu.Limits limits = default;
+        // Internal
+        internal Wgpu.Limits limits = default;
 
         // Properties
         public int MaxTextureDimension1D => (int)limits.maxTextureDimension1D;
@@ -52,9 +53,10 @@ namespace SharpityEngine.Graphics
     {
         // Internal
         internal Instance instance = null;
+        internal Adapter adapter = null;
+        internal Surface surface = null;
 
         // Private
-        private Adapter adapter = null;
         private Wgpu.AdapterProperties properties = default;
         private GraphicsLimits limits = default;
 
@@ -95,10 +97,11 @@ namespace SharpityEngine.Graphics
         }
 
         // Constructor
-        internal GraphicsAdapter(Instance instance, Adapter adapter)
+        internal GraphicsAdapter(Instance instance, Adapter adapter , Surface surface)
         {
             this.instance = instance;
             this.adapter = adapter;
+            this.surface = surface;
 
             // Get properties
             adapter.GetProperties(out properties);
@@ -108,7 +111,7 @@ namespace SharpityEngine.Graphics
             adapter.GetLimits(out supportedLimits);
 
             // Create limits
-            limits = new GraphicsLimits(supportedLimits.limits);
+            limits = new GraphicsLimits(supportedLimits.limits);            
         }
 
         // Methods
@@ -149,7 +152,10 @@ namespace SharpityEngine.Graphics
             };
 
             // Try to create device
-            adapter.RequestDevice(callback, "Device", Array.Empty<Wgpu.NativeFeature>());
+            adapter.RequestDevice(
+                callback, "Device", 
+                Array.Empty<Wgpu.NativeFeature>(),
+                limits: limits.limits);
 
             // Wait for completed
             while (completed == false)
@@ -196,27 +202,48 @@ namespace SharpityEngine.Graphics
             // Try to create adapter
             instance.RequestAdapter(surface,
                 (Wgpu.PowerPreference)powerMode,
-                true, callback,
+                false, callback,
                 (Wgpu.BackendType)backend);
-
+            
             // Wait for completed
             while (completed == false)
                 await Task.Delay(10);
 
             // Get adapter
-            return new GraphicsAdapter(instance, result);
+            return new GraphicsAdapter(instance, result, surface);
         }
 
         private static Surface CreateSurface(Instance instance, GameWindow window, GraphicsBackend backend)
         {
             // Check platform
-            if (window is IGraphicsContext_WindowsNative)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == true)
             {
-                // Create surface
-                return instance.CreateSurfaceFromWindowsHWND(
-                    ((IGraphicsContext_WindowsNative)window).HInstance,
-                    ((IGraphicsContext_WindowsNative)window).HWND);
+                // Check for windows native
+                if (window is IGraphicsContext_WindowsNative)
+                {
+                    // Create windows surface
+                    IntPtr hinstance, hwnd;
+
+                    // Get window pointer
+                    ((IGraphicsContext_WindowsNative)window).GetWindowNative(out hinstance, out hwnd);
+
+                    // Check for valid
+                    //if(hinstance != IntPtr.Zero && hwnd != IntPtr.Zero)
+                        return instance.CreateSurfaceFromWindowsHWND(hinstance, hwnd, "GameWindow");
+                }
+
+                Debug.LogError("Could not create surface for native windows platform!");
+                return null;
             }
+
+            //// Check platform
+            //if (window is IGraphicsContext_WindowsNative)
+            //{
+            //    // Create surface
+            //    return instance.CreateSurfaceFromWindowsHWND(
+            //        ((IGraphicsContext_WindowsNative)window).HInstance,
+            //        ((IGraphicsContext_WindowsNative)window).HWND);
+            //}
 
             Debug.LogError("Could not create surface!");
             return null;

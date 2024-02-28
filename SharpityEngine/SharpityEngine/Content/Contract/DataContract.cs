@@ -146,7 +146,7 @@ namespace SharpityEngine.Content.Contract
                 return true;
 
             // Check for serializable
-            if(typeof(Object).IsAssignableFrom(checkType) == true ||
+            if(typeof(GameElement).IsAssignableFrom(checkType) == true ||
                 checkType.GetCustomAttribute<DataContractAttribute>() != null)
             {
                 return true;

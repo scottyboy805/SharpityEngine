@@ -1,7 +1,7 @@
 ﻿
 namespace SharpityEngine.Graphics.Context
 {
-    internal interface IGraphicsContext
+    public interface IGraphicsContext
     {
         // Properties
         int RenderWidth { get; }

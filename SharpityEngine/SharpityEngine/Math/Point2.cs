@@ -284,6 +284,17 @@ namespace SharpityEngine
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static explicit operator Point4(Point2 point)
+        {
+            Point4 result;
+            result.X = point.X;
+            result.Y = point.Y;
+            result.Z = 0;
+            result.W = 0;
+            return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static explicit operator Vector2(Point2 point)
         {
             Vector2 result;
@@ -301,6 +312,17 @@ namespace SharpityEngine
             result.Z = 0f;
             return result;
         }
-#endregion
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static explicit operator Vector4(Point2 point)
+        {
+            Vector4 result;
+            result.X = point.X;
+            result.Y = point.Y;
+            result.Z = 0f;
+            result.W = 0f;
+            return result;
+        }
+        #endregion
     }
 }

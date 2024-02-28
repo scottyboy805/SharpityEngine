@@ -189,9 +189,9 @@ namespace SharpityEngine
 
         protected void AddListener(object instance, MethodInfo method)
         {
-            if (instance is Object)
+            if (instance is GameElement)
             {
-                listeners.Add(new GameEventPersistentListener((Object)instance, method));
+                listeners.Add(new GameEventPersistentListener((GameElement)instance, method));
             }
             else
             {

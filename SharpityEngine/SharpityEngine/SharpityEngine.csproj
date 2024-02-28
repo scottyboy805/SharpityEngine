@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="wgpu_native.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="WGPU.NET" Version="0.6.0" />
   </ItemGroup>
 
