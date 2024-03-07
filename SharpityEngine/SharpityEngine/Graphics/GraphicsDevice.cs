@@ -1,9 +1,6 @@
-﻿using SharpityEngine.Graphics.Context;
-using SharpityEngine.Graphics.Pipeline;
-using System.Drawing;
+﻿using SharpityEngine.Graphics.Pipeline;
 using System.Runtime.InteropServices;
 using WGPU.NET;
-using Buffer = WGPU.NET.Buffer;
 
 namespace SharpityEngine.Graphics
 {
@@ -203,15 +200,15 @@ namespace SharpityEngine.Graphics
             return new Texture(wgpuDevice, wgpuTexture, wgpuTextureDesc);
         }
 
-        public Shader CreateShader()
-        {
+        //public Shader CreateShader()
+        //{
 
-        }
+        //}
 
-        public GraphicsRenderPipeline CreateRenderPipeline(Shader shader)
-        {
+        //public GraphicsRenderPipeline CreateRenderPipeline(Shader shader)
+        //{
 
-        }
+        //}
 
         internal void OnDeviceLost(string reason)
         {
@@ -221,19 +218,6 @@ namespace SharpityEngine.Graphics
         private static void ErrorCallback(Wgpu.ErrorType type, string message)
         {
             Debug.LogErrorF(LogFilter.Graphics, "Device error!: [{0}] - {1}", type, message);
-        }
-
-        public static async Task<GraphicsDevice> Create(GameWindow window, GraphicsBackend backend, GraphicsPowerMode powerMode = GraphicsPowerMode.HighPower)
-        {
-            // Create adapter
-            GraphicsAdapter adapter = await GraphicsAdapter.CreateAsync(window, backend, powerMode);
-
-            // Check for created
-            if (adapter == null)
-                return null;
-
-            // Create device
-            return await adapter.RequestDeviceAsync();
         }
     }
 }

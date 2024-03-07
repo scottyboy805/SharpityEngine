@@ -191,27 +191,27 @@ namespace SharpityEngine.Graphics
             }
         }
 
-        public void Write<T>(ReadOnlySpan<T> data, int mipLevel = 0) where T : unmanaged
-        {
-            // Create copy instruction
-            ImageCopyTexture copy = new ImageCopyTexture
-            {
-                Aspect = Wgpu.TextureAspect.All,
-                MipLevel = (uint)mipLevel,
-                Origin = default,
-                Texture = texture,
-            };
+        //public void Write<T>(ReadOnlySpan<T> data, int mipLevel = 0) where T : unmanaged
+        //{
+        //    // Create copy instruction
+        //    ImageCopyTexture copy = new ImageCopyTexture
+        //    {
+        //        Aspect = Wgpu.TextureAspect.All,
+        //        MipLevel = (uint)mipLevel,
+        //        Origin = default,
+        //        Texture = texture,
+        //    };
 
-            // Create data layout
-            Wgpu.TextureDataLayout layout = new Wgpu.TextureDataLayout
-            {
-                offset = 0,
-                bytesPerRow = (uint)(Marshal.SizeOf<T>() * Width),
-                rowsPerImage = (uint)Height,
-            };
+        //    // Create data layout
+        //    Wgpu.TextureDataLayout layout = new Wgpu.TextureDataLayout
+        //    {
+        //        offset = 0,
+        //        bytesPerRow = (uint)(Marshal.SizeOf<T>() * Width),
+        //        rowsPerImage = (uint)Height,
+        //    };
 
-            // Add to queue
-            device.Queue.WriteTexture<T>(copy, data, layout, texture.Size);
-        }
+        //    // Add to queue
+        //    device.Queue.WriteTexture<T>(copy, data, layout, texture.Size);
+        //}
     }
 }

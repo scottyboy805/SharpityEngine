@@ -130,8 +130,11 @@ namespace SharpityEngine
             Debug.Log(LogFilter.Graphics, "Window fullscreen: " + window.Fullscreen);
 
 
+            // Create graphics surface
+            GraphicsSurface surface = GraphicsSurface.CreateSurface(window);
+
             // Create graphics device
-            GraphicsAdapter adapter = await GraphicsAdapter.CreateAsync(window, GraphicsBackend.Default, GraphicsPowerMode.HighPower);
+            GraphicsAdapter adapter = await GraphicsAdapter.CreateAsync(surface, GraphicsBackend.Default, GraphicsPowerMode.HighPower);
             GraphicsDevice device = null;
 
             // Create device

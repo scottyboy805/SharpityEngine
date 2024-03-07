@@ -13,6 +13,14 @@ namespace SharpityEngine.Graphics
         Inherit = 0x00000004,
     }
 
+    public enum PresentMode : int
+    {
+        Fifo = 0x00000000,
+        FifoRelaxed = 0x00000001,
+        Immediate = 0x00000002,
+        Mailbox = 0x00000003,
+    }
+
     public sealed class GraphicsSurface : IDisposable
     {
         // Internal
@@ -72,7 +80,7 @@ namespace SharpityEngine.Graphics
             Wgpu.SurfacePresent(wgpuSurface);
         }
 
-        private static GraphicsSurface CreateSurface(GameWindow window)
+        public static GraphicsSurface CreateSurface(GameWindow window)
         {
             Wgpu.InstanceImpl wgpuInstance = Wgpu.CreateInstance(default);
             Wgpu.SurfaceImpl wgpuSurface = default;

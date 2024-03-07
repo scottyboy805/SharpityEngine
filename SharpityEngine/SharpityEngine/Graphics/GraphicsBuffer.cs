@@ -1,6 +1,5 @@
 ﻿using System.Runtime.InteropServices;
 using WGPU.NET;
-using Buffer = WGPU.NET.Buffer;
 
 namespace SharpityEngine.Graphics
 {
@@ -85,18 +84,6 @@ namespace SharpityEngine.Graphics
         public void Unmap()
         {
             Wgpu.BufferUnmap(wgpuBuffer);
-        }
-
-        public void Write<T>(ReadOnlySpan<T> data, long bufferOffset = 0) where T : unmanaged
-        {
-            // Write buffer
-            device.Queue.WriteBuffer(buffer, (ulong)bufferOffset, data);
-        }
-
-        private void CheckDisposed()
-        {
-            if (buffer == null)
-                throw new ObjectDisposedException(nameof(GraphicsBuffer));
         }
     }
 }
