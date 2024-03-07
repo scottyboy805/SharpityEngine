@@ -1,6 +1,4 @@
-﻿using SharpityEngine.Graphics.Context;
-using System.Runtime.InteropServices;
-using WGPU.NET;
+﻿using WGPU.NET;
 
 namespace SharpityEngine.Graphics
 {
@@ -52,13 +50,13 @@ namespace SharpityEngine.Graphics
     public sealed class GraphicsAdapter : IDisposable
     {
         // Internal
-        internal Instance instance = null;
-        internal Adapter adapter = null;
-        internal Surface surface = null;
+        internal Wgpu.InstanceImpl wgpuInstance;
+        internal Wgpu.AdapterImpl wgpuAdapter;
+        internal Wgpu.AdapterProperties properties;
+        internal Wgpu.SupportedLimits limits;
 
-        // Private
-        private Wgpu.AdapterProperties properties = default;
-        private GraphicsLimits limits = default;
+        // Private        
+        private GraphicsLimits graphicsLimits = default;
 
         // Properties
         public uint VendorID
@@ -93,160 +91,125 @@ namespace SharpityEngine.Graphics
 
         public GraphicsLimits Limits
         {
-            get { return limits; }
+            get { return graphicsLimits; }
         }
 
         // Constructor
-        internal GraphicsAdapter(Instance instance, Adapter adapter , Surface surface)
+        internal GraphicsAdapter(Wgpu.InstanceImpl wgpuInstance, Wgpu.AdapterImpl wgpuAdapter)
         {
-            this.instance = instance;
-            this.adapter = adapter;
-            this.surface = surface;
+            this.wgpuInstance = wgpuInstance;
+            this.wgpuAdapter = wgpuAdapter;
 
             // Get properties
-            adapter.GetProperties(out properties);
+            Wgpu.AdapterGetProperties(wgpuAdapter, ref properties);
 
             // Get limits
-            Wgpu.SupportedLimits supportedLimits;
-            adapter.GetLimits(out supportedLimits);
+            Wgpu.AdapterGetLimits(wgpuAdapter, ref limits);
 
             // Create limits
-            limits = new GraphicsLimits(supportedLimits.limits);            
+            graphicsLimits = new GraphicsLimits(limits.limits);            
         }
 
         // Methods
         public void Dispose()
         {
-            if (instance != null)
+            // Check for already released
+            if (wgpuInstance.Equals(default) == false)
             {
                 // Release adapter
-                adapter.Dispose();
-                adapter = null;
+                Wgpu.AdapterRelease(wgpuAdapter);
+                wgpuAdapter = default;
 
                 // Release instance
-                instance.Dispose();
-                instance = null;
+                Wgpu.InstanceRelease(wgpuInstance);
+                wgpuInstance = default;
             }
         }
 
         public async Task<GraphicsDevice> RequestDeviceAsync()
         {
-            Device result = null;
             bool completed = false;
+            GraphicsDevice requestedDevice = null;
 
-            // Called on completion
-            RequestDeviceCallback callback = (Wgpu.RequestDeviceStatus status, Device device, string message) =>
+            // Try to request device
+            Wgpu.AdapterRequestDevice(wgpuAdapter, new Wgpu.DeviceDescriptor
             {
-                // Set completed
+                defaultQueue = default,
+                requiredLimits = IntPtr.Zero,
+                requiredFeatureCount = 0,
+                requiredFeatures = IntPtr.Zero,
+                label = "Device",
+                deviceLostCallback = (reason, message, _) => requestedDevice?.OnDeviceLost(message),
+                nextInChain = IntPtr.Zero,
+            },
+            (status, device, message, _) =>
+            {
+                // Set completed flag
                 completed = true;
 
-                // Check for status
+                // Check status
                 if (status == Wgpu.RequestDeviceStatus.Success)
                 {
-                    result = device;
+                    requestedDevice = new GraphicsDevice(wgpuInstance, device, this);
                 }
+                // Create device
                 else
                 {
                     Debug.LogErrorF(LogFilter.Graphics, "Failed to create device!: [{0}] - {1}", status, message);
                 }
-            };
+            }, IntPtr.Zero);           
 
-            // Try to create device
-            adapter.RequestDevice(
-                callback, "Device", 
-                Array.Empty<Wgpu.NativeFeature>(),
-                limits: limits.limits);
 
             // Wait for completed
             while (completed == false)
                 await Task.Delay(10);
 
             // Create device
-            return new GraphicsDevice(instance, this, result);
+            return requestedDevice;
         }
 
 
-        public static async Task<GraphicsAdapter> CreateAsync(GameWindow window, GraphicsBackend backend, GraphicsPowerMode powerMode)
+        public static async Task<GraphicsAdapter> CreateAsync(GraphicsSurface surface, GraphicsBackend backend, GraphicsPowerMode powerMode)
         {
-            // Create instance
-            Instance instance = new Instance();
-
-            // Create surface
-            Surface surface = CreateSurface(instance, window, backend);
-
-            // Check for surface
-            if (surface == null)
-                return null;
-
-
-            Adapter result = null;
             bool completed = false;
+            GraphicsAdapter createdAdapter = null;
 
-            // Called on completion
-            RequestAdapterCallback callback = (Wgpu.RequestAdapterStatus status, Adapter adapter, string message) =>
+            // Request adapter
+            Wgpu.InstanceRequestAdapter(surface.wgpuInstance, new Wgpu.RequestAdapterOptions
             {
-                // Set completed
+                compatibleSurface = surface.wgpuSurface,
+                powerPreference = (Wgpu.PowerPreference)powerMode,
+                forceFallbackAdapter = 0u,
+                nextInChain = backend != GraphicsBackend.Default
+                    ? new WgpuStructChain()
+                        .AddAdapterExtras((Wgpu.BackendType)backend)
+                        .GetPointer()
+                    : IntPtr.Zero,
+            },
+            (status, adapter, message, _) =>
+            {
+                // Set completed flag
                 completed = true;
 
-                // Check for status
+                // Check status
                 if (status == Wgpu.RequestAdapterStatus.Success)
                 {
-                    result = adapter;
+                    createdAdapter = new GraphicsAdapter(surface.wgpuInstance, adapter);
                 }
+                // Create device
                 else
                 {
-                    Debug.LogErrorF("Failed to create adapter!: [{0}] - {1}", status, message);
+                    Debug.LogErrorF(LogFilter.Graphics, "Failed to create adapter!: [{0}] - {1}", status, message);
                 }
-            };
+            }, IntPtr.Zero);
 
-            // Try to create adapter
-            instance.RequestAdapter(surface,
-                (Wgpu.PowerPreference)powerMode,
-                false, callback,
-                (Wgpu.BackendType)backend);
             
             // Wait for completed
             while (completed == false)
                 await Task.Delay(10);
 
             // Get adapter
-            return new GraphicsAdapter(instance, result, surface);
-        }
-
-        private static Surface CreateSurface(Instance instance, GameWindow window, GraphicsBackend backend)
-        {
-            // Check platform
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == true)
-            {
-                // Check for windows native
-                if (window is IGraphicsContext_WindowsNative)
-                {
-                    // Create windows surface
-                    IntPtr hinstance, hwnd;
-
-                    // Get window pointer
-                    ((IGraphicsContext_WindowsNative)window).GetWindowNative(out hinstance, out hwnd);
-
-                    // Check for valid
-                    //if(hinstance != IntPtr.Zero && hwnd != IntPtr.Zero)
-                        return instance.CreateSurfaceFromWindowsHWND(hinstance, hwnd, "GameWindow");
-                }
-
-                Debug.LogError("Could not create surface for native windows platform!");
-                return null;
-            }
-
-            //// Check platform
-            //if (window is IGraphicsContext_WindowsNative)
-            //{
-            //    // Create surface
-            //    return instance.CreateSurfaceFromWindowsHWND(
-            //        ((IGraphicsContext_WindowsNative)window).HInstance,
-            //        ((IGraphicsContext_WindowsNative)window).HWND);
-            //}
-
-            Debug.LogError("Could not create surface!");
-            return null;
+            return createdAdapter;
         }
     }
 }

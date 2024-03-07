@@ -18,7 +18,6 @@ namespace SharpityEngine.Graphics
         Texture1D = 0,
         Texture2D = 1,
         Texture3D = 2,
-        Force32 = int.MaxValue
     }
 
     public enum TextureFormat
@@ -119,68 +118,77 @@ namespace SharpityEngine.Graphics
         ASTC12x12UnormSrgb = 94,
     }
 
-    public class Texture : GameAsset
+    public sealed class Texture : GameAsset
     {
-        // Private 
-        private Device device = null;
-        private WGPU.NET.Texture texture = null;
-        private TextureFormat format = 0;
-        private TextureDimension dimension = 0;
-        private int mipLevelCount = 1;
-        private int sampleCount = 1;
+        // Internal
+        internal Wgpu.DeviceImpl wgpuDevice;
+        internal Wgpu.TextureImpl wgpuTexture;
+        internal Wgpu.TextureDescriptor wgpuTextureDesc;
 
         // Properties
         public TextureFormat Format
         {
-            get { return format; }
+            get { return (TextureFormat)wgpuTextureDesc.format; }
         }
 
         public TextureDimension Dimension
         {
-            get { return dimension; }
+            get { return (TextureDimension)wgpuTextureDesc.dimension; }
+        }
+
+        public TextureUsage Usage
+        {
+            get { return (TextureUsage)wgpuTextureDesc.usage; }
         }
 
         public int Width
         {
-            get { return (int)texture.Size.width; }
+            get { return (int)wgpuTextureDesc.size.width; }
         }
 
         public int Height
         {
-            get { return (int)texture.Size.height; }
+            get { return (int)wgpuTextureDesc.size.height; }
         }
 
         public int DepthOrLayers
         {
-            get { return (int)texture.Size.depthOrArrayLayers; }
+            get { return (int)wgpuTextureDesc.size.depthOrArrayLayers; }
         }
 
         public int MipLevelCount
         {
-            get { return mipLevelCount; }
+            get { return (int)wgpuTextureDesc.mipLevelCount; }
         }
 
         public int SampleCount
         {
-            get { return sampleCount; }
+            get { return (int)wgpuTextureDesc.sampleCount; }
         }
 
         // Constructor
-        internal Texture(Device device, WGPU.NET.Texture texture, TextureFormat format, TextureDimension dimension, int mipLevel, int sampleCount)
+        internal Texture(Wgpu.DeviceImpl wgpuDevice, Wgpu.TextureImpl wgpuTexture, in Wgpu.TextureDescriptor wgpuTextureDesc)
         {
-            this.device = device;
-            this.texture = texture;
-            this.format = format;
-            this.dimension = dimension;
-            this.mipLevelCount = mipLevel;
-            this.sampleCount = sampleCount;
+            this.wgpuDevice = wgpuDevice;
+            this.wgpuTexture = wgpuTexture;
+            this.wgpuTextureDesc = wgpuTextureDesc;
         }
 
         // Methods
         protected override void OnDestroy()
         {
             base.OnDestroy();
-            texture.Dispose();
+
+            if(wgpuTexture.Handle != IntPtr.Zero)
+            {
+                // Release texture
+                Wgpu.TextureDestroy(wgpuTexture);
+                Wgpu.TextureRelease(wgpuTexture);
+                wgpuTexture = default;
+
+                // Zero desc
+                wgpuTextureDesc = default;
+            }
         }
 
         public void Write<T>(ReadOnlySpan<T> data, int mipLevel = 0) where T : unmanaged

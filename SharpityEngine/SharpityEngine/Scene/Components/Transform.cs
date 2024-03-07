@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿using System.Reflection.Metadata.Ecma335;
+using System.Runtime.Serialization;
 
 namespace SharpityEngine
 {
@@ -7,8 +8,8 @@ namespace SharpityEngine
         // Private
         [DataMember(Name = "LocalPosition")]
         private Vector3 localPosition = Vector3.Zero;
-        //[DataMember(Name = "LocalRotation")]
-        //private Quaternion localRotation = Quaternion.Identity;
+        [DataMember(Name = "LocalRotation")]
+        private Quaternion localRotation = Quaternion.Identity;
         [DataMember(Name = "LocalScale")]
         private Vector3 localScale = Vector3.One;
 
@@ -59,10 +60,25 @@ namespace SharpityEngine
             }
         }
 
-        //public Vector3 LocalRotation
-        //{
-        //    get { return }
-        //}
+        public Quaternion LocalRotation
+        {
+            get { return localRotation; }
+            set
+            {
+                localRotation = value;
+                RebuildTransform();
+            }
+        }
+
+        public Vector3 LocalEulerAngle
+        {
+            get { return localRotation.EulerAngles; }
+            set
+            {
+                localRotation.EulerAngles = value;
+                RebuildTransform();
+            }
+        }
 
         public Vector3 LocalScale
         {

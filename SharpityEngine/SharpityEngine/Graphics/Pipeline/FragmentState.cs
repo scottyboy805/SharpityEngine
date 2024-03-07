@@ -53,7 +53,7 @@ namespace SharpityEngine.Graphics.Pipeline
 
         public BlendFactor SrcBlendFactor
         {
-            get { return SrcBlendFactor; }
+            get { return srcFactor; }
         }
 
         public BlendFactor DstBlendFactor
@@ -145,7 +145,6 @@ namespace SharpityEngine.Graphics.Pipeline
     public struct FragmentState
     {
         // Private
-        private Shader shader;
         private string entryPoint;
         private ColorTargetState[] colorTargets;
 
@@ -153,11 +152,6 @@ namespace SharpityEngine.Graphics.Pipeline
         public const string DefaultEntryPoint = "fs_main";
 
         // Properties
-        public Shader Shader
-        {
-            get { return shader; }
-        }
-
         public string EntryPoint
         {
             get { return entryPoint; }
@@ -169,16 +163,14 @@ namespace SharpityEngine.Graphics.Pipeline
         }
 
         // Constructor
-        public FragmentState(Shader shader, params ColorTargetState[] colorTargets)
+        public FragmentState(params ColorTargetState[] colorTargets)
         {
-            this.shader = shader;
             this.entryPoint = DefaultEntryPoint;
             this.colorTargets = colorTargets;
         }
 
-        public FragmentState(Shader shader, string entryPoint, params ColorTargetState[] colorTargets)
+        public FragmentState(string entryPoint, params ColorTargetState[] colorTargets)
         {
-            this.shader = shader;
             this.entryPoint = entryPoint;
             this.colorTargets = colorTargets;
         }

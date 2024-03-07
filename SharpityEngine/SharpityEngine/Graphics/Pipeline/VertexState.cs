@@ -116,7 +116,6 @@ namespace SharpityEngine.Graphics.Pipeline
     public struct VertexState
     {
         // Private
-        private Shader shader;
         private string entryPoint;
         private VertexBufferLayout[] bufferLayouts;
 
@@ -124,11 +123,6 @@ namespace SharpityEngine.Graphics.Pipeline
         public const string DefaultEntryPoint = "vs_main";
 
         // Properties
-        public Shader Shader
-        {
-            get { return shader; }
-        }
-
         public string EntryPoint
         {
             get { return entryPoint; }
@@ -140,16 +134,14 @@ namespace SharpityEngine.Graphics.Pipeline
         }
 
         // Constructor
-        public VertexState(Shader shader, params VertexBufferLayout[] bufferLayouts)
+        public VertexState(params VertexBufferLayout[] bufferLayouts)
         {
-            this.shader = shader;
             this.entryPoint = DefaultEntryPoint;
             this.bufferLayouts = bufferLayouts;
         }
 
-        public VertexState(Shader shader, string entryPoint, params VertexBufferLayout[] bufferLayouts)
+        public VertexState(string entryPoint, params VertexBufferLayout[] bufferLayouts)
         {
-            this.shader = shader;
             this.entryPoint = entryPoint;
             this.bufferLayouts = bufferLayouts;
         }

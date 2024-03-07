@@ -1,4 +1,7 @@
 ﻿using SharpityEngine.Graphics.Context;
+using SharpityEngine.Graphics.Pipeline;
+using System.Drawing;
+using System.Runtime.InteropServices;
 using WGPU.NET;
 using Buffer = WGPU.NET.Buffer;
 
@@ -25,9 +28,12 @@ namespace SharpityEngine.Graphics
 
     public sealed class GraphicsDevice : IDisposable
     {
-        private Instance instance = null;
+        // Internal
+        internal Wgpu.InstanceImpl wgpuInstance;
+        internal Wgpu.DeviceImpl wgpuDevice;
+
+        // Private
         private GraphicsAdapter adapter = null;
-        private Device device = null;
 
         // Properties
         public GraphicsAdapter Adapter
@@ -36,168 +42,180 @@ namespace SharpityEngine.Graphics
         }
 
         // Constructor
-        internal GraphicsDevice(Instance instance, GraphicsAdapter adapter, Device device)
+        internal GraphicsDevice(Wgpu.InstanceImpl wgpuInstance, Wgpu.DeviceImpl wgpuDevice, GraphicsAdapter adapter)
         {
-            this.instance = instance;
+            this.wgpuInstance = wgpuInstance;
+            this.wgpuDevice = wgpuDevice;
             this.adapter = adapter;
-            this.device = device;
 
             // Set error callback
-            device.SetUncapturedErrorCallback(ErrorCallback);
+            Wgpu.ErrorCallback errorCallback = (type, message, _) => ErrorCallback(type, message);
+            Wgpu.DeviceSetUncapturedErrorCallback(wgpuDevice, errorCallback, IntPtr.Zero);
         }
 
         // Methods
         public void Dispose()
         {
-            if (instance != null)
+            if (wgpuDevice.Equals(default) == false)
             {
-                instance.Dispose();
-                instance = null;
+                Wgpu.DeviceRelease(wgpuDevice);
+                wgpuDevice = default;
             }
         }
 
         public GraphicsBuffer CreateBuffer(ulong size, GraphicsBufferUsage usage)
         {
-            // Try to create buffer
-            Buffer buffer = device.CreateBuffer(string.Empty, false, size, (Wgpu.BufferUsage)usage);
-
-            // Check for created
-            if (buffer == null)
-                return null;
+            // Create desc
+            Wgpu.BufferDescriptor desc = new Wgpu.BufferDescriptor
+            {
+                label = null,
+                mappedAtCreation = 0u,
+                size = size,
+                usage = (uint)usage,
+            };
 
             // Create buffer
-            return new GraphicsBuffer(device, buffer);
+            Wgpu.BufferImpl buffer = Wgpu.DeviceCreateBuffer(wgpuDevice, desc);
+
+            // Check for error
+            if (buffer.Handle == IntPtr.Zero)
+                return null;
+
+            // Get result
+            return new GraphicsBuffer(wgpuDevice, buffer, desc);
         }
 
         public GraphicsBuffer CreateBuffer<T>(ReadOnlySpan<T> data, GraphicsBufferUsage usage) where T : unmanaged
         {
-            // Try to create buffer
-            Buffer buffer = device.CreateBuffer(string.Empty, true, (ulong)data.Length, (Wgpu.BufferUsage)usage);
-
-            // Check for created
-            if (buffer == null)
-                return null;
-            
-            // Copy data
-            data.CopyTo(buffer.GetMappedRange<T>(0, data.Length));
-            
-            // Unmap
-            buffer.Unmap();
+            // Create desc
+            Wgpu.BufferDescriptor desc = new Wgpu.BufferDescriptor
+            {
+                label = null,
+                mappedAtCreation = 1u,
+                size = (ulong)data.Length * (ulong)Marshal.SizeOf<T>(),
+                usage = (uint)usage,
+            };
 
             // Create buffer
-            return new GraphicsBuffer(device, buffer);
+            Wgpu.BufferImpl buffer = Wgpu.DeviceCreateBuffer(wgpuDevice, desc);
+
+            // Check for error
+            if (buffer.Handle == IntPtr.Zero)
+                return null;
+
+            // Get result
+            GraphicsBuffer bufferCreated = new GraphicsBuffer(wgpuDevice, buffer, desc);
+
+            // Copy data
+            data.CopyTo(bufferCreated.MapRange<T>(0, data.Length));
+
+            // Unmap
+            bufferCreated.Unmap();
+
+            // Get result
+            return bufferCreated;
         }
 
         public Texture CreateTexture1D(int length, TextureFormat format, TextureUsage usage = TextureUsage.TextureBinding, int mipLevel = 1, int sampleCount = 1)
         {
-            // Create size
-            Wgpu.Extent3D size = new Wgpu.Extent3D
+            // Create desc
+            Wgpu.TextureDescriptor wgpuTextureDesc = new Wgpu.TextureDescriptor
             {
-                width = (uint)length,
-                height = (uint)0,
-                depthOrArrayLayers = 0,
+                label = null,
+                usage = (uint)usage,
+                dimension = Wgpu.TextureDimension.OneDimension,
+                size = new Wgpu.Extent3D
+                {
+                    width = (uint)length,
+                },
+                format = (Wgpu.TextureFormat)format,
+                mipLevelCount = (uint)mipLevel,
+                sampleCount = (uint)sampleCount,
             };
 
             // Create texture
-            WGPU.NET.Texture texture = device.CreateTexture(
-                string.Empty,
-                (Wgpu.TextureUsage)usage,
-                (Wgpu.TextureDimension)TextureDimension.Texture1D,
-                size,
-                (Wgpu.TextureFormat)format,
-                (uint)mipLevel, (uint)sampleCount);
+            Wgpu.TextureImpl wgpuTexture = Wgpu.DeviceCreateTexture(wgpuDevice, wgpuTextureDesc);
 
-            // Check for created
-            if (texture == null)
+            // Check for error
+            if (wgpuTexture.Handle == IntPtr.Zero)
                 return null;
 
-            return new Texture(device, texture, format, TextureDimension.Texture2D, mipLevel, sampleCount);
+            // Get result
+            return new Texture(wgpuDevice, wgpuTexture, wgpuTextureDesc);
         }
 
         public Texture CreateTexture2D(int width, int height, TextureFormat format, TextureUsage usage = TextureUsage.TextureBinding, int mipLevel = 1, int sampleCount = 1)
         {
-            // Create size
-            Wgpu.Extent3D size = new Wgpu.Extent3D
+            // Create desc
+            Wgpu.TextureDescriptor wgpuTextureDesc = new Wgpu.TextureDescriptor
             {
-                width = (uint)width,
-                height = (uint)height,
-                depthOrArrayLayers = 0,
+                label = null,
+                usage = (uint)usage,
+                dimension = Wgpu.TextureDimension.TwoDimensions,
+                size = new Wgpu.Extent3D
+                {
+                    width = (uint)width,
+                    height = (uint)height,
+                },
+                format = (Wgpu.TextureFormat)format,
+                mipLevelCount = (uint)mipLevel,
+                sampleCount = (uint)sampleCount,
             };
 
             // Create texture
-            WGPU.NET.Texture texture = device.CreateTexture(
-                string.Empty,
-                (Wgpu.TextureUsage)usage,
-                (Wgpu.TextureDimension)TextureDimension.Texture2D,
-                size,
-                (Wgpu.TextureFormat)format,
-                (uint)mipLevel, (uint)sampleCount);
+            Wgpu.TextureImpl wgpuTexture = Wgpu.DeviceCreateTexture(wgpuDevice, wgpuTextureDesc);
 
-            // Check for created
-            if (texture == null)
+            // Check for error
+            if (wgpuTexture.Handle == IntPtr.Zero)
                 return null;
 
-            return new Texture(device, texture, format, TextureDimension.Texture2D, mipLevel, sampleCount);
+            // Get result
+            return new Texture(wgpuDevice, wgpuTexture, wgpuTextureDesc);
         }
 
         public Texture CreateTexture3D(int width, int height, int depth, TextureFormat format, TextureUsage usage = TextureUsage.TextureBinding, int mipLevel = 1, int sampleCount = 1)
         {
-            // Create size
-            Wgpu.Extent3D size = new Wgpu.Extent3D
+            // Create desc
+            Wgpu.TextureDescriptor wgpuTextureDesc = new Wgpu.TextureDescriptor
             {
-                width = (uint)width,
-                height = (uint)height,
-                depthOrArrayLayers = (uint)depth,
+                label = null,
+                usage = (uint)usage,
+                dimension = Wgpu.TextureDimension.ThreeDimensions,
+                size = new Wgpu.Extent3D
+                {
+                    width = (uint)width,
+                    height = (uint)height,
+                    depthOrArrayLayers = (uint)depth,
+                },
+                format = (Wgpu.TextureFormat)format,
+                mipLevelCount = (uint)mipLevel,
+                sampleCount = (uint)sampleCount,
             };
 
             // Create texture
-            WGPU.NET.Texture texture = device.CreateTexture(
-                string.Empty,
-                (Wgpu.TextureUsage)usage,
-                (Wgpu.TextureDimension)TextureDimension.Texture3D,
-                size,
-                (Wgpu.TextureFormat)format,
-                (uint)mipLevel, (uint)sampleCount);
+            Wgpu.TextureImpl wgpuTexture = Wgpu.DeviceCreateTexture(wgpuDevice, wgpuTextureDesc);
 
-            // Check for created
-            if (texture == null)
+            // Check for error
+            if (wgpuTexture.Handle == IntPtr.Zero)
                 return null;
 
-            return new Texture(device, texture, format, TextureDimension.Texture3D, mipLevel, sampleCount);
+            // Get result
+            return new Texture(wgpuDevice, wgpuTexture, wgpuTextureDesc);
         }
 
-        public GraphicsSwapChain CreateSwapChain(IGraphicsContext surface, TextureFormat format = 0, PresentMode presentMode = PresentMode.Fifo)
+        public Shader CreateShader()
         {
-            // Get surface preferred format
-            TextureFormat swapChainFormat = format == 0
-                ? (TextureFormat)adapter.surface.GetPreferredFormat(adapter.adapter)
-                : format;
 
-            // Create swap chain
-            return CreateSwapChain(surface.RenderWidth, surface.RenderHeight, swapChainFormat, presentMode);
         }
 
-        public GraphicsSwapChain CreateSwapChain(int width, int height, TextureFormat format, PresentMode presentMode = PresentMode.Fifo)
+        public GraphicsRenderPipeline CreateRenderPipeline(Shader shader)
         {
-            // Create description
-            Wgpu.SwapChainDescriptor desc = new Wgpu.SwapChainDescriptor
-            {
-                usage = (uint)Wgpu.TextureUsage.RenderAttachment,
-                width = (uint)width,
-                height = (uint)height,
-                format = (Wgpu.TextureFormat)format,
-                presentMode = (Wgpu.PresentMode)presentMode,
-            };
 
-            // Create swap chain
-            SwapChain swapChain = device.CreateSwapChain(adapter.surface, desc);
+        }
 
-            // Check for created
-            if (swapChain == null)
-                return null;
+        internal void OnDeviceLost(string reason)
+        {
 
-            // Create swap chain
-            return new GraphicsSwapChain(swapChain, width, height, format, presentMode);
         }
 
         private static void ErrorCallback(Wgpu.ErrorType type, string message)

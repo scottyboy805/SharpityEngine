@@ -1,4 +1,5 @@
-﻿using WGPU.NET;
+﻿using System.Runtime.InteropServices;
+using WGPU.NET;
 using Buffer = WGPU.NET.Buffer;
 
 namespace SharpityEngine.Graphics
@@ -20,31 +21,70 @@ namespace SharpityEngine.Graphics
 
     public sealed class GraphicsBuffer : IDisposable
     {
-        // Private
-        private Device device = null;
-        private Buffer buffer = null;
+        // Internal
+        internal Wgpu.DeviceImpl wgpuDevice;
+        internal Wgpu.BufferImpl wgpuBuffer;
+        internal Wgpu.BufferDescriptor wgpuBufferDesc;
 
         // Properties
         public ulong SizeInBytes
         {
-            get { return buffer.SizeInBytes; }
+            get { return wgpuBufferDesc.size; }
+        }
+
+        public GraphicsBufferUsage Usage
+        {
+            get { return (GraphicsBufferUsage)wgpuBufferDesc.usage; }
         }
 
         // Constructor
-        internal GraphicsBuffer(Device device, Buffer buffer)
+        internal GraphicsBuffer(Wgpu.DeviceImpl wgpuDevice, Wgpu.BufferImpl wgpuBuffer, Wgpu.BufferDescriptor wgpuBufferDesc)
         {
-            this.device = device;
-            this.buffer = buffer;
+            this.wgpuDevice = wgpuDevice;
+            this.wgpuBuffer = wgpuBuffer;
+            this.wgpuBufferDesc = wgpuBufferDesc;
         }
 
         // Methods
         public void Dispose()
         {
-            if (buffer != null)
+            if (wgpuBuffer.Handle != IntPtr.Zero)
             {
-                buffer.Dispose();
-                buffer = null;
+                // Release buffer
+                Wgpu.BufferDestroy(wgpuBuffer);
+                Wgpu.BufferRelease(wgpuBuffer);
+                wgpuBuffer = default;
+
+                // Zero desc
+                wgpuBufferDesc = default;
             }
+        }
+
+        public unsafe Span<T> MapConstRange<T>(ulong offset, int size)
+            where T : unmanaged
+        {
+            var structSize = (ulong)Marshal.SizeOf<T>();
+
+            void* ptr = (void*)Wgpu.BufferGetConstMappedRange(wgpuBuffer,
+                offset * structSize, (ulong)size * structSize);
+
+            return new Span<T>(ptr, size);
+        }
+
+        public unsafe Span<T> MapRange<T>(ulong offset, int size)
+            where T : unmanaged
+        {
+            var structSize = (ulong)Marshal.SizeOf<T>();
+
+            void* ptr = (void*)Wgpu.BufferGetMappedRange(wgpuBuffer,
+                offset * structSize, (ulong)size * structSize);
+
+            return new Span<T>(ptr, size);
+        }
+
+        public void Unmap()
+        {
+            Wgpu.BufferUnmap(wgpuBuffer);
         }
 
         public void Write<T>(ReadOnlySpan<T> data, long bufferOffset = 0) where T : unmanaged
