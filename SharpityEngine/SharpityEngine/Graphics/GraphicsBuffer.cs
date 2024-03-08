@@ -3,7 +3,7 @@ using WGPU.NET;
 
 namespace SharpityEngine.Graphics
 {
-    public enum GraphicsBufferUsage
+    public enum BufferUsage
     {
         None = 0,
         MapRead = 1,
@@ -16,6 +16,14 @@ namespace SharpityEngine.Graphics
         Storage = 0x80,
         Indirect = 0x100,
         QueryResolve = 0x200,
+    }
+
+    public enum BufferBindingType
+    {
+        Undefined = 0,
+        Uniform = 1,
+        Storage = 2,
+        ReadOnlyStorage = 3,
     }
 
     public sealed class GraphicsBuffer : IDisposable
@@ -31,9 +39,9 @@ namespace SharpityEngine.Graphics
             get { return wgpuBufferDesc.size; }
         }
 
-        public GraphicsBufferUsage Usage
+        public BufferUsage Usage
         {
-            get { return (GraphicsBufferUsage)wgpuBufferDesc.usage; }
+            get { return (BufferUsage)wgpuBufferDesc.usage; }
         }
 
         // Constructor

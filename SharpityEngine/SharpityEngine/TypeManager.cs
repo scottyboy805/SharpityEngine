@@ -19,7 +19,7 @@ namespace SharpityEngine
     public sealed class TypeManager
     {
         // Type
-        private class TypeResolverPriorityComparer : IComparer<ITypeResolver>
+        private sealed class TypeResolverPriorityComparer : IComparer<ITypeResolver>
         {
             // Methods
             public int Compare(ITypeResolver x, ITypeResolver y)

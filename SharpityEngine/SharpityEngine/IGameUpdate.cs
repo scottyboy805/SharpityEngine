@@ -6,6 +6,8 @@ namespace SharpityEngine
         // Properties
         int Priority { get; }
 
+        bool Enabled { get; }
+
         // Methods
         void OnStart();
 

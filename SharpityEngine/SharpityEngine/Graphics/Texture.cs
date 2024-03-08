@@ -136,6 +136,23 @@ namespace SharpityEngine.Graphics
         ASTC12x12UnormSrgb = 94,
     }
 
+    public enum TextureSampleType
+    {
+        Float = 1,
+        UnfilterableFloat = 2,
+        Depth = 3,
+        Sint = 4,
+        Uint = 5,
+    }
+
+    public enum SamplerBindingType
+    {
+        Undefined = 0,
+        Filtering = 1,
+        NonFiltering = 2,
+        Comparison = 3,
+    }
+
     public enum WrapMode : int
     {
         Repeat = 0x00000000,

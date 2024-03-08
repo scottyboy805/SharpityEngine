@@ -1,4 +1,5 @@
 ﻿using SharpityEngine.Graphics.Pipeline;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using WGPU.NET;
 
@@ -23,6 +24,21 @@ namespace SharpityEngine.Graphics
         OpenGLES = 8,
     }
 
+    public enum QueryType : int
+    {
+        Occlusion = 0x00000000,
+        Timestamp = 0x00000001,
+    }
+
+    public enum PipelineStatisticName : int
+    {
+        VertexShaderInvocations = 0x00000000,
+        ClipperInvocations = 0x00000001,
+        ClipperPrimitivesOut = 0x00000002,
+        FragmentShaderInvocations = 0x00000003,
+        ComputeShaderInvocations = 0x00000004,
+    }
+
     public sealed class GraphicsDevice : IDisposable
     {
         // Internal
@@ -31,11 +47,17 @@ namespace SharpityEngine.Graphics
 
         // Private
         private GraphicsAdapter adapter = null;
+        private GraphicsQueue queue = null;
 
         // Properties
         public GraphicsAdapter Adapter
         {
             get { return adapter; }
+        }
+
+        public GraphicsQueue Queue
+        {
+            get { return queue; }
         }
 
         // Constructor
@@ -44,6 +66,9 @@ namespace SharpityEngine.Graphics
             this.wgpuInstance = wgpuInstance;
             this.wgpuDevice = wgpuDevice;
             this.adapter = adapter;
+
+            // Create queue
+            this.queue = new GraphicsQueue(Wgpu.DeviceGetQueue(wgpuDevice));
 
             // Set error callback
             Wgpu.ErrorCallback errorCallback = (type, message, _) => ErrorCallback(type, message);
@@ -55,12 +80,18 @@ namespace SharpityEngine.Graphics
         {
             if (wgpuDevice.Handle != IntPtr.Zero)
             {
+                // Release queue
+                queue.Dispose();
+                queue = null;
+
+                // Release device
+                Wgpu.DeviceDestroy(wgpuDevice);
                 Wgpu.DeviceRelease(wgpuDevice);
                 wgpuDevice = default;
             }
         }
 
-        public GraphicsBuffer CreateBuffer(ulong size, GraphicsBufferUsage usage)
+        public GraphicsBuffer CreateBuffer(ulong size, BufferUsage usage)
         {
             // Create desc
             Wgpu.BufferDescriptor desc = new Wgpu.BufferDescriptor
@@ -82,7 +113,7 @@ namespace SharpityEngine.Graphics
             return new GraphicsBuffer(wgpuDevice, buffer, desc);
         }
 
-        public GraphicsBuffer CreateBuffer<T>(ReadOnlySpan<T> data, GraphicsBufferUsage usage) where T : unmanaged
+        public GraphicsBuffer CreateBuffer<T>(ReadOnlySpan<T> data, BufferUsage usage) where T : unmanaged
         {
             // Create desc
             Wgpu.BufferDescriptor desc = new Wgpu.BufferDescriptor
@@ -263,10 +294,99 @@ namespace SharpityEngine.Graphics
             return new Shader(wgpuDevice, wgpuShader, shaderSource);
         }
 
+        public unsafe BindGroupLayout CreateBindGroupLayout(BindLayoutData[] layoutData)
+        {
+            // Create entry
+            Span<Wgpu.BindGroupLayoutEntry> wgpuEntries = stackalloc Wgpu.BindGroupLayoutEntry[layoutData.Length];
+
+            // Fill out data
+            for (int i = 0; i < layoutData.Length; i++)
+                wgpuEntries[i] = layoutData[i].GetLayoutEntry();
+
+            // Create desc
+            Wgpu.BindGroupLayoutDescriptor wgpuBindGroupLayoutDesc = new Wgpu.BindGroupLayoutDescriptor
+            {
+                entries = (IntPtr)Unsafe.AsPointer(ref MemoryMarshal.GetReference(wgpuEntries)),
+                entryCount = (uint)layoutData.Length,
+            };
+
+            // Create binding group
+            Wgpu.BindGroupLayoutImpl wgpuBindGroupLayout = Wgpu.DeviceCreateBindGroupLayout(wgpuDevice, wgpuBindGroupLayoutDesc);
+
+            // Check for error
+            if (wgpuBindGroupLayout.Handle == IntPtr.Zero)
+                return null;
+
+            // Create binding group
+            return new BindGroupLayout(wgpuBindGroupLayout);
+        }
+
+        public unsafe BindGroup CreateBindGroup(BindGroupLayout layout, BindData[] bindData)
+        {
+            // Create entry
+            Span<Wgpu.BindGroupEntry> wgpuEntries = stackalloc Wgpu.BindGroupEntry[bindData.Length];
+
+            // Fill out data
+            for (int i = 0; i < bindData.Length; i++)
+                wgpuEntries[i] = bindData[i].GetEntry();
+
+            // Create desc
+            Wgpu.BindGroupDescriptor wgpuBindGroupDesc = new Wgpu.BindGroupDescriptor
+            {
+                layout = layout.wgpuBindGroupLayout,
+                entries = (IntPtr)Unsafe.AsPointer(ref MemoryMarshal.GetReference(wgpuEntries)),
+                entryCount = (uint)bindData.Length,
+            };
+
+            // Create bind group
+            Wgpu.BindGroupImpl wgpuBindGroup = Wgpu.DeviceCreateBindGroup(wgpuDevice, wgpuBindGroupDesc);
+
+            // Check for error
+            if(wgpuBindGroup.Handle == IntPtr.Zero) 
+                return null;
+
+            // Create bind group
+            return new BindGroup(wgpuBindGroup);
+        }
+
+        public CommandList CreateCommandList()
+        {
+            // Create encoder
+            Wgpu.CommandEncoderImpl wgpuEncoder = Wgpu.DeviceCreateCommandEncoder(wgpuDevice, default);
+
+            // Check for error
+            if (wgpuEncoder.Handle == IntPtr.Zero)
+                return null;
+
+            // Create result
+            return new CommandList(wgpuEncoder);
+        }
+
         //public GraphicsRenderPipeline CreateRenderPipeline(Shader shader)
         //{
 
         //}
+
+        
+
+        public unsafe QuerySet CreateQuerySet(QueryType type, int count, PipelineStatisticName[] pipelineStatistics)
+        {
+            fixed(PipelineStatisticName* pipelineStats = pipelineStatistics)
+            {
+                // Create desc
+                Wgpu.QuerySetDescriptor wgpuQueryDesc = new Wgpu.QuerySetDescriptor
+                {
+                    type = (Wgpu.QueryType)type,
+                    count = (uint)count,
+                };
+
+                // Create query
+                Wgpu.QuerySetImpl wgpuQuery = Wgpu.DeviceCreateQuerySet(wgpuDevice, wgpuQueryDesc);
+
+                // Create result
+                return new QuerySet(wgpuQuery);
+            }
+        }
 
         internal void OnDeviceLost(string reason)
         {

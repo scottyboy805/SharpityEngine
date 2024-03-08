@@ -13,6 +13,7 @@ namespace SharpityEngine
         private GamePlatform platform = null;
         private GameWindow window = null;
         private GraphicsDevice graphicsDevice = null;
+        private GameModules gameModules = null;
 
         private List<IGameUpdate> scheduledStartElements = new List<IGameUpdate>(256);
         private List<IGameUpdate> scheduledUpdateElements = new List<IGameUpdate>(256);
@@ -91,6 +92,7 @@ namespace SharpityEngine
             this.platform = platform;
             this.window = window;
             this.graphicsDevice = graphicsDevice;
+            this.gameModules = new GameModules();
         }
 
         // Methods
@@ -101,6 +103,9 @@ namespace SharpityEngine
             frameTimer = Stopwatch.StartNew();
             frameUpdateTimer = Stopwatch.StartNew();
             frameRenderTimer = Stopwatch.StartNew();
+
+            // Initialize modules
+            gameModules.OnStart();
         }
 
         protected internal virtual void DoGameFrame()
@@ -110,6 +115,7 @@ namespace SharpityEngine
             frameRate = 1f / (float)frameTimer.Elapsed.TotalSeconds;
 
             // Frame loop start
+            gameModules.OnFrameStart();
             //OnFrameStart();
 
             //// Frame start
@@ -127,6 +133,7 @@ namespace SharpityEngine
             //// Frame end
             //gameModules.OnFrameEnd();
 
+            gameModules.OnFrameEnd();
             //OnFrameEnd();
 
             // Update destroyed elements
@@ -164,6 +171,7 @@ namespace SharpityEngine
             //OnFrameUpdate(gameTime);
 
             //// Update modules
+            gameModules.OnUpdate(gameTime);
             //gameModules.OnUpdate(gameTime);
 
 
@@ -177,45 +185,52 @@ namespace SharpityEngine
         {
             // ### Render loop start
             frameRenderTimer.Restart();
-//            OnFrameRenderBegin();
+            //            OnFrameRenderBegin();
 
-//            // Clear screen
-//            canvas.Clear(GraphicsDevice.ClearColor);
-//            {
-//                // Before render
-//                OnFramePostRender(canvas);
-//                {
-//                    // Before draw
-//                    gameModules.OnBeforeDraw();
+            gameModules.OnBeforeDraw();
 
-//                    // Draw
-//                    gameModules.OnDraw(canvas);
+            // Draw modules
+            gameModules.OnDraw();
 
-//                    // Draw stats
-//                    if (Metrics.DrawStats == true)
-//                        Metrics.DrawStatsText(canvas);
+            //            // Clear screen
+            //            canvas.Clear(GraphicsDevice.ClearColor);
+            //            {
+            //                // Before render
+            //                OnFramePostRender(canvas);
+            //                {
+            //                    // Before draw
+            //                    gameModules.OnBeforeDraw();
 
-//                    // After draw
-//                    gameModules.OnAfterDraw();
-//                }
-//                // After render
-//                OnFramePostRender(canvas);
+            //                    // Draw
+            //                    gameModules.OnDraw(canvas);
+
+            //                    // Draw stats
+            //                    if (Metrics.DrawStats == true)
+            //                        Metrics.DrawStatsText(canvas);
+
+            //                    // After draw
+            //                    gameModules.OnAfterDraw();
+            //                }
+            //                // After render
+            //                OnFramePostRender(canvas);
 
 
-//                // Display fps and extra info in game window title bar
-//#if DEBUG && !SIMPLE2D_WEB
-//                // Check for title changed
-//                if (window.Title.StartsWith(windowTitle) == false)
-//                    windowTitle = window.Title;
+            //                // Display fps and extra info in game window title bar
+            //#if DEBUG && !SIMPLE2D_WEB
+            //                // Check for title changed
+            //                if (window.Title.StartsWith(windowTitle) == false)
+            //                    windowTitle = window.Title;
 
-//                window.Title = string.Format("{0} - Platform API ({1}, {2}) - Render API ({3}, {4})", windowTitle, platform.ApiName, platform.ApiVersion, graphicsDevice.ApiName, graphicsDevice.ApiVersion);
-//#endif
-//            }
-//            // Update render timings
-//            renderDuration = frameRenderTimer.Elapsed;
+            //                window.Title = string.Format("{0} - Platform API ({1}, {2}) - Render API ({3}, {4})", windowTitle, platform.ApiName, platform.ApiVersion, graphicsDevice.ApiName, graphicsDevice.ApiVersion);
+            //#endif
+            //            }
+            //            // Update render timings
+            //            renderDuration = frameRenderTimer.Elapsed;
 
-//            // Render end
-//            OnFrameRenderEnd();
+            //            // Render end
+            //            OnFrameRenderEnd();
+
+            gameModules.OnAfterDraw();
 
             // Swap buffers
             window.SwapBuffers();
@@ -224,6 +239,7 @@ namespace SharpityEngine
         protected internal virtual void DoGameShutdown()
         {
             Debug.Log("Shutdown...");
+
 
             //// Destroy game scenes
             //foreach (GameScene gameScene in modules.GetModulesOfType<GameScene>())
@@ -237,7 +253,7 @@ namespace SharpityEngine
 
             //// Shutdown modules
             //gameModules.OnDestroy();
-
+            gameModules.OnDestroy();
 
             // Close window
             Debug.Log(LogFilter.Graphics, "Closing window...");
@@ -351,7 +367,5 @@ namespace SharpityEngine
 
         public void Exit() => Exit(0);
         public abstract void Exit(int code);
-
-
     }
 }

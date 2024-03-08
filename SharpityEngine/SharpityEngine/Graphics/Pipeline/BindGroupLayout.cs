@@ -1,57 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Runtime.Serialization;
+using WGPU.NET;
 
 namespace SharpityEngine.Graphics.Pipeline
 {
-    public enum ShaderStage
-    {
-        None = 0,
-        Vertex = 1,
-        Fragment = 2,
-        Compute = 4,
-        Force32 = int.MaxValue
-    }
-
-    public enum BufferBindingType
-    {
-        Undefined = 0,
-        Uniform = 1,
-        Storage = 2,
-        ReadOnlyStorage = 3,
-    }
-
-    public enum SamplerBindingType
-    {
-        Undefined = 0,
-        Filtering = 1,
-        NonFiltering = 2,
-        Comparison = 3,
-    }
-
-    public enum TextureSampleType
-    {
-        Float = 1,
-        UnfilterableFloat = 2,
-        Depth = 3,
-        Sint = 4,
-        Uint = 5,
-    }
-
-    public enum TextureViewDimension
-    {
-        OneDimension = 1,
-        TwoDimensions = 2,
-        TwoDimensionalArray = 3,
-        Cube = 4,
-        CubeArray = 5,
-        ThreeDimensions = 6,
-    }
-
-    public sealed class BufferBindingLayout : BindingLayout
+    public sealed class BufferBindLayoutData : BindLayoutData
     {
         // Private
         [DataMember(Name = "BufferType")]
@@ -69,9 +21,25 @@ namespace SharpityEngine.Graphics.Pipeline
         {
             get { return minBindingSize; }
         }
+
+        // Methods
+        internal override Wgpu.BindGroupLayoutEntry GetLayoutEntry()
+        {
+            return new Wgpu.BindGroupLayoutEntry
+            {
+                binding = (uint)BindingSlot,
+                visibility = (uint)ShaderStage,
+                buffer = new Wgpu.BufferBindingLayout
+                {
+                    type = (Wgpu.BufferBindingType)bufferType,
+                    hasDynamicOffset = 0,
+                    minBindingSize = minBindingSize,
+                },
+            };
+        }
     }
 
-    public sealed class SamplerBindingLayout : BindingLayout
+    public sealed class SamplerBindLayoutData : BindLayoutData
     {
         // Private
         [DataMember(Name = "SamplerType")]
@@ -82,15 +50,29 @@ namespace SharpityEngine.Graphics.Pipeline
         {
             get { return samplerType; }
         }
+
+        // Methods
+        internal override Wgpu.BindGroupLayoutEntry GetLayoutEntry()
+        {
+            return new Wgpu.BindGroupLayoutEntry
+            {
+                binding = (uint)BindingSlot,
+                visibility = (uint)ShaderStage,
+                sampler = new Wgpu.SamplerBindingLayout
+                {
+                    type = (Wgpu.SamplerBindingType)samplerType,
+                },
+            };
+        }
     }
 
-    public sealed class TextureBindingLayout : BindingLayout
+    public sealed class TextureBindLayoutData : BindLayoutData
     {
         // Private
         [DataMember(Name = "SampleType")]
         private TextureSampleType sampleType = TextureSampleType.Float;
         [DataMember(Name = "ViewDimension")]
-        private TextureViewDimension viewDimension = TextureViewDimension.TwoDimensions;
+        private TextureViewDimension viewDimension = TextureViewDimension.Texture2D;
         [DataMember(Name = "Multisampled")]
         private bool multisampled = true;
 
@@ -109,15 +91,31 @@ namespace SharpityEngine.Graphics.Pipeline
         {
             get { return multisampled; }
         }
+
+        // Methods
+        internal override Wgpu.BindGroupLayoutEntry GetLayoutEntry()
+        {
+            return new Wgpu.BindGroupLayoutEntry
+            {
+                binding = (uint)BindingSlot,
+                visibility = (uint)ShaderStage,
+                texture = new Wgpu.TextureBindingLayout
+                {
+                    sampleType = (Wgpu.TextureSampleType)sampleType,
+                    viewDimension = (Wgpu.TextureViewDimension)viewDimension,
+                    multisampled = multisampled ? 1u : 0u,
+                },
+            };
+        }
     }
 
-    public sealed class StorageTextureBindingLayout : BindingLayout
+    public sealed class StorageTextureBindLayoutData : BindLayoutData
     {
         // Private
         [DataMember(Name = "Format")]
         private TextureFormat format = TextureFormat.RGBA32Float;
         [DataMember(Name = "ViewDimension")]
-        private TextureViewDimension viewDimension = TextureViewDimension.TwoDimensions;
+        private TextureViewDimension viewDimension = TextureViewDimension.Texture2D;
 
         // Properties
         public TextureFormat Format
@@ -129,18 +127,34 @@ namespace SharpityEngine.Graphics.Pipeline
         {
             get { return viewDimension; }
         }
+
+        // Methods
+        internal override Wgpu.BindGroupLayoutEntry GetLayoutEntry()
+        {
+            return new Wgpu.BindGroupLayoutEntry
+            {
+                binding = (uint)BindingSlot,
+                visibility = (uint)ShaderStage,
+                storageTexture = new Wgpu.StorageTextureBindingLayout
+                {
+                    format = (Wgpu.TextureFormat)format,
+                    viewDimension = (Wgpu.TextureViewDimension)viewDimension,
+                    access = Wgpu.StorageTextureAccess.WriteOnly,
+                },
+            };
+        }
     }
 
-    public abstract class BindingLayout
+    public abstract class BindLayoutData
     {
         // Private
         [DataMember(Name = "BindingSlot")]
-        private uint bindingSlot = 0;
+        private int bindingSlot = 0;
         [DataMember(Name = "ShaderStage")]
         private ShaderStage shaderStage = ShaderStage.Vertex;
 
         // Properties
-        public uint BindingSlot
+        public int BindingSlot
         {
             get { return bindingSlot; }
         }
@@ -148,6 +162,32 @@ namespace SharpityEngine.Graphics.Pipeline
         public ShaderStage ShaderStage
         {
             get { return shaderStage; }
+        }
+
+        // Methods
+        internal abstract Wgpu.BindGroupLayoutEntry GetLayoutEntry();
+    }
+
+    public sealed class BindGroupLayout : IDisposable
+    {
+        // Internal
+        internal Wgpu.BindGroupLayoutImpl wgpuBindGroupLayout;
+
+        // Constructor
+        internal BindGroupLayout(Wgpu.BindGroupLayoutImpl wgpuBindGroupLayout)
+        {
+            this.wgpuBindGroupLayout = wgpuBindGroupLayout;
+        }
+
+        // Methods
+        public void Dispose()
+        {
+            if(wgpuBindGroupLayout.Handle != IntPtr.Zero)
+            {
+                // Release bind group
+                Wgpu.BindGroupLayoutRelease(wgpuBindGroupLayout);
+                wgpuBindGroupLayout = default;
+            }
         }
     }
 }

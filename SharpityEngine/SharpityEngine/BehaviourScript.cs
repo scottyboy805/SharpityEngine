@@ -1,7 +1,7 @@
 ﻿
 namespace SharpityEngine
 {
-    public abstract class BehaviourScript : GameElement, IGameEnable, IGameUpdate
+    public abstract class BehaviourScript : Component, IGameEnable, IGameUpdate
     {
         // Private
         private int priority = 0;

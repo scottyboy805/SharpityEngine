@@ -3,6 +3,14 @@ using WGPU.NET;
 
 namespace SharpityEngine.Graphics
 {
+    public enum ShaderStage
+    {
+        None = 0,
+        Vertex = 1,
+        Fragment = 2,
+        Compute = 4,
+    }
+
     public enum PrimitiveTopology
     {
         PointList = 0,
@@ -44,7 +52,7 @@ namespace SharpityEngine.Graphics
 
         private VertexState vertexState;
         private FragmentState fragmentState;
-        private BindingLayout[] bindingLayoutGroup;
+        private BindLayoutData[] bindingLayoutGroup;
 
         // Properties
         public FrontFace FrontFace
@@ -67,7 +75,7 @@ namespace SharpityEngine.Graphics
             get { return fragmentState; }
         }
 
-        public BindingLayout[] BindingLayoutGroup
+        public BindLayoutData[] BindingLayoutGroup
         {
             get { return bindingLayoutGroup; }
         }
