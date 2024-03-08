@@ -10,9 +10,6 @@ namespace SharpityEngine.Graphics
         // Constructor
         internal CommandBuffer(Wgpu.CommandBufferImpl wgpuCommandBuffer)
         {
-            if (wgpuCommandBuffer.Handle == IntPtr.Zero)
-                throw new Exception("Failed to create command buffer");
-
             this.wgpuCommandBuffer = wgpuCommandBuffer;
         }
 

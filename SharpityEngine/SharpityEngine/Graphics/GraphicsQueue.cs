@@ -59,5 +59,33 @@ namespace SharpityEngine.Graphics
                 (IntPtr)Unsafe.AsPointer(ref MemoryMarshal.GetReference(data)),
                 (ulong)data.Length * tSize);
         }
+
+        //public unsafe void WriteTexture<T>(Texture texture, ReadOnlySpan<T> data, int bytesPerRow, int rowsPerImage, int offset = 0, TextureAspect aspect = TextureAspect.All, Point3 origin = default, int mipLevel = 0)
+        //{
+        //    // Create image copy
+        //    Wgpu.ImageCopyTexture copyDesc = new Wgpu.ImageCopyTexture
+        //    {
+        //        texture = texture.wgpuTexture,
+        //        aspect = (Wgpu.TextureAspect)aspect,
+        //        origin = new Wgpu.Origin3D { x = (uint)origin.X, y = (uint)origin.Y, z = (uint)origin.Z },
+        //        mipLevel = (uint)mipLevel,
+        //    };
+
+        //    // Create texture layout
+        //    Wgpu.TextureDataLayout layoutDesc = new Wgpu.TextureDataLayout
+        //    {
+        //        bytesPerRow = (uint)bytesPerRow,
+        //        rowsPerImage = (uint)rowsPerImage,
+        //        offset = (uint)offset,
+        //    };
+
+        //    ulong tSize = (ulong)sizeof(T);
+
+        //    // Write texture
+        //    Wgpu.QueueWriteTexture(wgpuQueue, copyDesc,
+        //        (IntPtr)Unsafe.AsPointer(ref MemoryMarshal.GetReference(data)),
+        //        (ulong)data.Length * (ulong)tSize,
+        //        layoutDesc, )
+        //}
     }
 }

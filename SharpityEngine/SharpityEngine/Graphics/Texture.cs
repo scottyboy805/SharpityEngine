@@ -13,11 +13,29 @@ namespace SharpityEngine.Graphics
         RenderAttachment = 0x10,
     }
 
+    public enum TextureAspect : int
+    {
+        All = 0x00000000,
+        StencilOnly = 0x00000001,
+        DepthOnly = 0x00000002,
+    }
+
     public enum TextureDimension
     {
         Texture1D = 0,
         Texture2D = 1,
         Texture3D = 2,
+    }
+
+    public enum TextureViewDimension : int
+    {
+        Default = 0x00000000,
+        Texture1D = 0x00000001,
+        Texture2D = 0x00000002,
+        Texture2DArray = 0x00000003,
+        Cube = 0x00000004,
+        CubeArray = 0x00000005,
+        Texture3D = 0x00000006,
     }
 
     public enum TextureFormat
@@ -118,12 +136,99 @@ namespace SharpityEngine.Graphics
         ASTC12x12UnormSrgb = 94,
     }
 
+    public enum WrapMode : int
+    {
+        Repeat = 0x00000000,
+        MirrorRepeat = 0x00000001,
+        ClampToEdge = 0x00000002,
+    }
+
+    public enum FilterMode : int
+    {
+        Nearest = 0x00000000,
+        Linear = 0x00000001,
+    }
+
+    public enum CompareFunction : int
+    {
+        Default = 0x00000000,
+        Never = 0x00000001,
+        Less = 0x00000002,
+        LessEqual = 0x00000003,
+        Greater = 0x00000004,
+        GreaterEqual = 0x00000005,
+        Equal = 0x00000006,
+        NotEqual = 0x00000007,
+        Always = 0x00000008,
+    }
+
+    public sealed class Sampler : IDisposable
+    {
+        // Internal
+        internal Wgpu.SamplerImpl wgpuSampler;
+
+        // Constructor
+        internal Sampler(Wgpu.SamplerImpl wgpuSampler)
+        {
+            this.wgpuSampler = wgpuSampler;
+        }
+
+        // Methods
+        public void Dispose()
+        {
+            if(wgpuSampler.Handle != IntPtr.Zero)
+            {
+                // Release sampler
+                Wgpu.SamplerRelease(wgpuSampler);
+                wgpuSampler = default;
+            }
+        }
+    }
+
+    public sealed class TextureView : IDisposable
+    {
+        // Internal
+        internal Wgpu.TextureViewImpl wgpuTextureView;
+
+        // Private
+        private Texture texture = null;        
+
+        // Properties
+        public Texture Texture
+        {
+            get { return texture; }
+        }
+
+        // Constructor
+        internal TextureView(Wgpu.TextureViewImpl wgpuTextureView, Texture texture)
+        {
+            this.wgpuTextureView = wgpuTextureView;
+            this.texture = texture;
+        }
+
+        // Methods
+        public void Dispose()
+        {
+            if(wgpuTextureView.Handle != IntPtr.Zero)
+            {
+                // Unregister view
+                texture?.ReleaseView(this);
+
+                // Release view
+                Wgpu.TextureViewRelease(wgpuTextureView);
+                wgpuTextureView = default;
+            }
+        }
+    }
+
     public sealed class Texture : GameAsset
     {
         // Internal
-        internal Wgpu.DeviceImpl wgpuDevice;
         internal Wgpu.TextureImpl wgpuTexture;
         internal Wgpu.TextureDescriptor wgpuTextureDesc;
+
+        // Private
+        private HashSet<TextureView> createdViews = null;
 
         // Properties
         public TextureFormat Format
@@ -167,9 +272,8 @@ namespace SharpityEngine.Graphics
         }
 
         // Constructor
-        internal Texture(Wgpu.DeviceImpl wgpuDevice, Wgpu.TextureImpl wgpuTexture, in Wgpu.TextureDescriptor wgpuTextureDesc)
+        internal Texture(Wgpu.TextureImpl wgpuTexture, in Wgpu.TextureDescriptor wgpuTextureDesc)
         {
-            this.wgpuDevice = wgpuDevice;
             this.wgpuTexture = wgpuTexture;
             this.wgpuTextureDesc = wgpuTextureDesc;
         }
@@ -181,6 +285,19 @@ namespace SharpityEngine.Graphics
 
             if(wgpuTexture.Handle != IntPtr.Zero)
             {
+                // Release any created views
+                if (createdViews != null)
+                {
+                    foreach (TextureView view in createdViews)
+                    {
+                        // Release view
+                        Wgpu.TextureViewRelease(view.wgpuTextureView);
+                        view.wgpuTextureView = default;
+                    }
+                    createdViews.Clear();
+                    createdViews = null;
+                }
+
                 // Release texture
                 Wgpu.TextureDestroy(wgpuTexture);
                 Wgpu.TextureRelease(wgpuTexture);
@@ -191,27 +308,82 @@ namespace SharpityEngine.Graphics
             }
         }
 
-        //public void Write<T>(ReadOnlySpan<T> data, int mipLevel = 0) where T : unmanaged
-        //{
-        //    // Create copy instruction
-        //    ImageCopyTexture copy = new ImageCopyTexture
-        //    {
-        //        Aspect = Wgpu.TextureAspect.All,
-        //        MipLevel = (uint)mipLevel,
-        //        Origin = default,
-        //        Texture = texture,
-        //    };
+        public TextureView CreateView(TextureAspect aspect = TextureAspect.All)
+        {
+            // Create desc
+            Wgpu.TextureViewDescriptor wgpuTextureViewDesc = new Wgpu.TextureViewDescriptor
+            {
+                label = "View",
+                format = wgpuTextureDesc.format,
+                dimension = wgpuTextureDesc.dimension switch
+                { 
+                    Wgpu.TextureDimension.OneDimension => Wgpu.TextureViewDimension.OneDimension,
+                    Wgpu.TextureDimension.TwoDimensions => Wgpu.TextureViewDimension.TwoDimensions,
+                    Wgpu.TextureDimension.ThreeDimensions => Wgpu.TextureViewDimension.ThreeDimensions,
+                    _ => throw new NotSupportedException("Texture View Format: " + (TextureDimension)wgpuTextureDesc.dimension),
+                },
+                baseMipLevel = 0,
+                mipLevelCount = wgpuTextureDesc.mipLevelCount,
+                baseArrayLayer = 0,
+                arrayLayerCount = wgpuTextureDesc.size.depthOrArrayLayers,
+                aspect = (Wgpu.TextureAspect)aspect,
+            };
 
-        //    // Create data layout
-        //    Wgpu.TextureDataLayout layout = new Wgpu.TextureDataLayout
-        //    {
-        //        offset = 0,
-        //        bytesPerRow = (uint)(Marshal.SizeOf<T>() * Width),
-        //        rowsPerImage = (uint)Height,
-        //    };
+            // Create view
+            Wgpu.TextureViewImpl wgpuTextureView = Wgpu.TextureCreateView(wgpuTexture, wgpuTextureViewDesc);
 
-        //    // Add to queue
-        //    device.Queue.WriteTexture<T>(copy, data, layout, texture.Size);
-        //}
+            // Check for error
+            if (wgpuTextureView.Handle == IntPtr.Zero)
+                return null;
+
+            // Create view result
+            TextureView textureViewResult = new TextureView(wgpuTextureView, this);
+
+            // Register view
+            if (createdViews == null) createdViews = new HashSet<TextureView>();
+            createdViews.Add(textureViewResult);
+
+            // Create view
+            return textureViewResult;
+        }
+
+        public TextureView CreateView(TextureFormat format, TextureViewDimension dimension, TextureAspect aspect = TextureAspect.All, int baseMipLevel = 0, int mipLevelCount = 1, int baseArrayLayer = 0, int arrayLayerCount = 0)
+        {
+            // Create desc
+            Wgpu.TextureViewDescriptor wgpuTextureViewDesc = new Wgpu.TextureViewDescriptor
+            {
+                label = "View",
+                format = (Wgpu.TextureFormat)format,
+                dimension = (Wgpu.TextureViewDimension)dimension,
+                baseMipLevel = (uint)baseMipLevel,
+                mipLevelCount = (uint)mipLevelCount,
+                baseArrayLayer = (uint)baseArrayLayer,
+                arrayLayerCount = (uint)arrayLayerCount,
+                aspect = (Wgpu.TextureAspect)aspect,
+            };
+
+            // Create view
+            Wgpu.TextureViewImpl wgpuTextureView = Wgpu.TextureCreateView(wgpuTexture, wgpuTextureViewDesc);
+
+            // Check for error
+            if (wgpuTextureView.Handle == IntPtr.Zero)
+                return null;
+
+            // Create view result
+            TextureView textureViewResult = new TextureView(wgpuTextureView, this);
+
+            // Register view
+            if (createdViews == null) createdViews = new HashSet<TextureView>();
+            createdViews.Add(textureViewResult);
+
+            // Create view
+            return textureViewResult;
+        }
+
+        internal void ReleaseView(TextureView view)
+        {
+            if(createdViews != null && createdViews.Contains(view) == true)
+                createdViews.Remove(view);
+        }
     }
 }

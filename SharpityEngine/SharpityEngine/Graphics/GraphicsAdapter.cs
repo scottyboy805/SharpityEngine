@@ -114,7 +114,7 @@ namespace SharpityEngine.Graphics
         public void Dispose()
         {
             // Check for already released
-            if (wgpuInstance.Equals(default) == false)
+            if (wgpuInstance.Handle != IntPtr.Zero)
             {
                 // Release adapter
                 Wgpu.AdapterRelease(wgpuAdapter);
@@ -126,39 +126,48 @@ namespace SharpityEngine.Graphics
             }
         }
 
-        public async Task<GraphicsDevice> RequestDeviceAsync()
+        public async  Task<GraphicsDevice> RequestDeviceAsync()
         {
             bool completed = false;
             GraphicsDevice requestedDevice = null;
 
-            // Try to request device
-            Wgpu.AdapterRequestDevice(wgpuAdapter, new Wgpu.DeviceDescriptor
+            unsafe
             {
-                defaultQueue = default,
-                requiredLimits = IntPtr.Zero,
-                requiredFeatureCount = 0,
-                requiredFeatures = IntPtr.Zero,
-                label = "Device",
-                deviceLostCallback = (reason, message, _) => requestedDevice?.OnDeviceLost(message),
-                nextInChain = IntPtr.Zero,
-            },
-            (status, device, message, _) =>
-            {
-                // Set completed flag
-                completed = true;
-
-                // Check status
-                if (status == Wgpu.RequestDeviceStatus.Success)
+                // Get limits
+                Wgpu.RequiredLimits requiredLimits = new Wgpu.RequiredLimits
                 {
-                    requestedDevice = new GraphicsDevice(wgpuInstance, device, this);
-                }
-                // Create device
-                else
-                {
-                    Debug.LogErrorF(LogFilter.Graphics, "Failed to create device!: [{0}] - {1}", status, message);
-                }
-            }, IntPtr.Zero);           
+                    nextInChain = IntPtr.Zero,
+                    limits = limits.limits,
+                };
 
+                // Try to request device
+                Wgpu.AdapterRequestDevice(wgpuAdapter, new Wgpu.DeviceDescriptor
+                {
+                    defaultQueue = default,
+                    requiredLimits = new IntPtr(&requiredLimits),
+                    requiredFeatureCount = 0,
+                    requiredFeatures = IntPtr.Zero,
+                    label = "Device",
+                    deviceLostCallback = (reason, message, _) => requestedDevice?.OnDeviceLost(message),
+                    nextInChain = IntPtr.Zero,
+                },
+                (status, device, message, _) =>
+                {
+                    // Set completed flag
+                    completed = true;
+
+                    // Check status
+                    if (status == Wgpu.RequestDeviceStatus.Success)
+                    {
+                        requestedDevice = new GraphicsDevice(wgpuInstance, device, this);
+                    }
+                    // Create device
+                    else
+                    {
+                        Debug.LogErrorF(LogFilter.Graphics, "Failed to create device!: [{0}] - {1}", status, message);
+                    }
+                }, IntPtr.Zero);
+            }
 
             // Wait for completed
             while (completed == false)

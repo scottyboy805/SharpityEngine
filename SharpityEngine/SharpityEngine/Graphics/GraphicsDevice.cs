@@ -53,7 +53,7 @@ namespace SharpityEngine.Graphics
         // Methods
         public void Dispose()
         {
-            if (wgpuDevice.Equals(default) == false)
+            if (wgpuDevice.Handle != IntPtr.Zero)
             {
                 Wgpu.DeviceRelease(wgpuDevice);
                 wgpuDevice = default;
@@ -138,7 +138,7 @@ namespace SharpityEngine.Graphics
                 return null;
 
             // Get result
-            return new Texture(wgpuDevice, wgpuTexture, wgpuTextureDesc);
+            return new Texture(wgpuTexture, wgpuTextureDesc);
         }
 
         public Texture CreateTexture2D(int width, int height, TextureFormat format, TextureUsage usage = TextureUsage.TextureBinding, int mipLevel = 1, int sampleCount = 1)
@@ -167,7 +167,7 @@ namespace SharpityEngine.Graphics
                 return null;
 
             // Get result
-            return new Texture(wgpuDevice, wgpuTexture, wgpuTextureDesc);
+            return new Texture(wgpuTexture, wgpuTextureDesc);
         }
 
         public Texture CreateTexture3D(int width, int height, int depth, TextureFormat format, TextureUsage usage = TextureUsage.TextureBinding, int mipLevel = 1, int sampleCount = 1)
@@ -197,13 +197,71 @@ namespace SharpityEngine.Graphics
                 return null;
 
             // Get result
-            return new Texture(wgpuDevice, wgpuTexture, wgpuTextureDesc);
+            return new Texture(wgpuTexture, wgpuTextureDesc);
         }
 
-        //public Shader CreateShader()
-        //{
+        public Sampler CreateSampler(WrapMode wrapMode = WrapMode.ClampToEdge, FilterMode filter = FilterMode.Linear)
+        {
+            // Call through
+            return CreateSampler(wrapMode, wrapMode, wrapMode, filter, filter, filter);
+        }
 
-        //}
+        public Sampler CreateSampler(WrapMode uMode, WrapMode vMode, WrapMode wMode, FilterMode magFilter, FilterMode minFilter, FilterMode mipFilter, float lodMinClamp = 0f, float logMaxClamp = 1f, CompareFunction compareMode = CompareFunction.Default)
+        {
+            // Create desc
+            Wgpu.SamplerDescriptor wgpuSamplerDesc = new Wgpu.SamplerDescriptor
+            {
+                label = "Sampler",
+                addressModeU = (Wgpu.AddressMode)uMode,
+                addressModeV = (Wgpu.AddressMode)vMode,
+                addressModeW = (Wgpu.AddressMode)wMode,
+                magFilter = (Wgpu.FilterMode)magFilter,
+                minFilter = (Wgpu.FilterMode)minFilter,
+                mipmapFilter = (Wgpu.MipmapFilterMode)mipFilter,
+                lodMinClamp = lodMinClamp,
+                lodMaxClamp = logMaxClamp,
+                compare = (Wgpu.CompareFunction)compareMode,
+                maxAnisotropy = 1,
+            };
+
+            // Create sampler
+            Wgpu.SamplerImpl wgpuSampler = Wgpu.DeviceCreateSampler(wgpuDevice, wgpuSamplerDesc);
+
+            // Check for error
+            if (wgpuSampler.Handle == IntPtr.Zero)
+                return null;
+
+            // Get result
+            return new Sampler(wgpuSampler);
+        }
+
+        public Shader CreateShader()
+        {
+            // Create shader from asset
+            return new Shader(wgpuDevice);
+        }
+
+        public Shader CreateShader(string shaderSource)
+        {
+            // Create desc
+            Wgpu.ShaderModuleDescriptor wgpuShaderDesc = new Wgpu.ShaderModuleDescriptor
+            {
+                label = "Shader",
+                nextInChain = new WgpuStructChain()
+                    .AddShaderModuleWGSLDescriptor(shaderSource)
+                    .GetPointer(),
+            };
+
+            // Create shader
+            Wgpu.ShaderModuleImpl wgpuShader = Wgpu.DeviceCreateShaderModule(wgpuDevice, wgpuShaderDesc);
+
+            // Check for error
+            if(wgpuShader.Handle == IntPtr.Zero) 
+                return null;
+
+            // Get result
+            return new Shader(wgpuDevice, wgpuShader, shaderSource);
+        }
 
         //public GraphicsRenderPipeline CreateRenderPipeline(Shader shader)
         //{

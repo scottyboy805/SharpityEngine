@@ -21,6 +21,16 @@ namespace SharpityEngine.Graphics
         Mailbox = 0x00000003,
     }
 
+    public enum SurfaceTextureStatus : int
+    {
+        Success = 0x00000000,
+        Timeout = 0x00000001,
+        Outdated = 0x00000002,
+        Lost = 0x00000003,
+        OutOfMemory = 0x00000004,
+        DeviceLost = 0x00000005,
+    }
+
     public sealed class GraphicsSurface : IDisposable
     {
         // Internal
@@ -41,7 +51,7 @@ namespace SharpityEngine.Graphics
         // Methods
         public void Dispose()
         {
-            if(wgpuSurface.Equals(default) == false)
+            if(wgpuSurface.Handle != IntPtr.Zero)
             {
                 // Release surface
                 Wgpu.SurfaceRelease(wgpuSurface);
@@ -53,6 +63,63 @@ namespace SharpityEngine.Graphics
         {
             return (TextureFormat)Wgpu.SurfaceGetPreferredFormat(wgpuSurface,
                 adapter != null ? adapter.wgpuAdapter : default);
+        }
+
+        public Texture GetCurrentTexture()
+        {
+            return GetCurrentTexture(out _, out _);
+        }
+
+        public Texture GetCurrentTexture(out SurfaceTextureStatus status, out int suboptimal)
+        {
+            // Get surface
+            Wgpu.SurfaceTexture wgpuSurfaceTexture = default;
+            Wgpu.SurfaceGetCurrentTexture(wgpuSurface, ref wgpuSurfaceTexture);
+
+            // Create texture desc
+            Wgpu.TextureDescriptor wgpuTextureDesc = new Wgpu.TextureDescriptor
+            {
+                dimension = Wgpu.TextureGetDimension(wgpuSurfaceTexture.texture),
+                format = Wgpu.TextureGetFormat(wgpuSurfaceTexture.texture),
+                size = new Wgpu.Extent3D
+                {
+                    width = Wgpu.TextureGetWidth(wgpuSurfaceTexture.texture),
+                    height = Wgpu.TextureGetHeight(wgpuSurfaceTexture.texture),
+                    depthOrArrayLayers = Wgpu.TextureGetDepthOrArrayLayers(wgpuSurfaceTexture.texture),
+                },
+                usage = Wgpu.TextureGetUsage(wgpuSurfaceTexture.texture),
+                sampleCount = Wgpu.TextureGetSampleCount(wgpuSurfaceTexture.texture),
+                mipLevelCount = Wgpu.TextureGetMipLevelCount(wgpuSurfaceTexture.texture),
+            };
+
+            // Assign out
+            status = (SurfaceTextureStatus)wgpuSurfaceTexture.status;
+            suboptimal = (int)wgpuSurfaceTexture.suboptimal;
+
+            // Check for error
+            if (status != SurfaceTextureStatus.Success)
+                return null;
+
+            // Create texture
+            return new Texture(wgpuSurfaceTexture.texture, wgpuTextureDesc);
+        }
+
+        public TextureView GetCurrentTextureView()
+        {
+            return GetCurrentTextureView(out _, out _);
+        }
+
+        public TextureView GetCurrentTextureView(out SurfaceTextureStatus status, out int suboptimal)
+        {
+            // Get current texture
+            Texture texture = GetCurrentTexture(out status, out suboptimal);
+
+            // Check for error
+            if (texture == null)
+                return null;
+
+            // Create view
+            return texture.CreateView();
         }
 
         public void Prepare(GraphicsDevice device, PresentMode presentMode, TextureFormat format, TextureUsage usage = TextureUsage.RenderAttachment, CompositeAlphaMode alphaMode = CompositeAlphaMode.Auto, int width = -1, int height = -1)

@@ -9,7 +9,7 @@ namespace SharpityEngine
         public readonly GameEvent OnWillDestroy = new GameEvent();
 
         // Private
-        private GameProvider game = null;
+        private Game game = null;
         //private ContentBundle contentBundle = null;
         private bool isDestroying = false;
         private bool isDestroyed = false;
@@ -99,7 +99,7 @@ namespace SharpityEngine
             }
         }
 
-        public GameProvider Game
+        public Game Game
         {
             get
             {
@@ -129,7 +129,7 @@ namespace SharpityEngine
         // Constructor
         protected GameElement()
         {
-            game = GameProvider.Current;
+            game = Game.Current;
 
             // Game settings is a special type that gets initialized very early
             if ((this is GameSettings) == false)

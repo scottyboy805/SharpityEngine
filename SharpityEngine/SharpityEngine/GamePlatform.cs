@@ -6,12 +6,12 @@ using System.Runtime.CompilerServices;
 
 namespace SharpityEngine
 {
-    internal abstract class GamePlatformProvider
+    internal abstract class GamePlatform
     {
         // Private
         private bool isInitialized = false;
         private TypeManager typeManager = null;
-        private GameProvider gameProvider = null;
+        private Game gameProvider = null;
         
         // Properties
         public abstract string APIName { get; }
@@ -22,13 +22,13 @@ namespace SharpityEngine
             get { return typeManager; }
         }
 
-        public GameProvider GameProvider
+        public Game GameProvider
         {
             get { return gameProvider; }
         }
 
         // Constructor
-        protected GamePlatformProvider()
+        protected GamePlatform()
         {
             typeManager = new TypeManager();
         }
@@ -36,7 +36,7 @@ namespace SharpityEngine
         // Methods
         public override string ToString()
         {
-            return string.Format("{0}({1}, {2})", typeof(GamePlatformProvider).FullName, APIName, APIVersion);
+            return string.Format("{0}({1}, {2})", typeof(GamePlatform).FullName, APIName, APIVersion);
         }
 
         public virtual async Task InitializeAsync()

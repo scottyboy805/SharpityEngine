@@ -4,7 +4,7 @@ using SharpityEngine.Graphics;
 
 namespace SharpityEngine_SDL
 {
-    internal sealed class SDL2_GamePlatform : GamePlatformProvider
+    internal sealed class SDL2_GamePlatform : GamePlatform
     {
         // Private
         private Version sdlVersion = null;
@@ -55,7 +55,7 @@ namespace SharpityEngine_SDL
 
         public override Game CreateGame(GameWindow window, GraphicsDevice graphicsDevice)
         {
-            return new Game(TypeManager, this, window, graphicsDevice);
+            return new SDL2_Game(TypeManager, this, window, graphicsDevice);
         }
 
         public override void OpenURL(string url)
@@ -183,7 +183,5 @@ namespace SharpityEngine_SDL
             // Cleanup sdl
             SDL.SDL_Quit();
         }
-
-        
     }
 }
