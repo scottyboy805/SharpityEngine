@@ -6,6 +6,8 @@ namespace SharpityEngine.Graphics.Pipeline
     {
         // Private
         private GraphicsBuffer buffer = null;
+        private long offset = 0;
+        private long size = 0;
 
         // Properties
         public GraphicsBuffer Buffer
@@ -13,11 +15,23 @@ namespace SharpityEngine.Graphics.Pipeline
             get { return buffer; }
         }
 
+        public long Offset
+        {
+            get { return offset; }
+        }
+
+        public long Size
+        {
+            get { return size; }
+        }
+
         // Constructor
         public BufferBindData(GraphicsBuffer buffer, int bindSlot, long offset, long size)
-            : base(bindSlot, offset, size)
+            : base(bindSlot)
         {
             this.buffer = buffer;
+            this.offset = offset;
+            this.size = size;
         }
 
         // Methods
@@ -45,8 +59,8 @@ namespace SharpityEngine.Graphics.Pipeline
         }
 
         // Constructor
-        public SamplerBindData(Sampler sampler, int bindSlot, long offset, long size)
-            : base(bindSlot, offset, size)
+        public SamplerBindData(Sampler sampler, int bindSlot)
+            : base(bindSlot)
         {
             this.sampler = sampler;
         }
@@ -57,8 +71,6 @@ namespace SharpityEngine.Graphics.Pipeline
             return new Wgpu.BindGroupEntry
             {
                 binding = (uint)BindingSlot,
-                offset = (ulong)Offset,
-                size = (ulong)Size,
                 sampler = sampler.wgpuSampler,
             };
         }
@@ -76,8 +88,8 @@ namespace SharpityEngine.Graphics.Pipeline
         }
 
         // Constructor
-        public TextureBindData(TextureView textureView,  int bindSlot, long offset, long size)
-            : base(bindSlot, offset, size)
+        public TextureBindData(TextureView textureView,  int bindSlot)
+            : base(bindSlot)
         {
             this.textureView = textureView;
         }
@@ -88,8 +100,6 @@ namespace SharpityEngine.Graphics.Pipeline
             return new Wgpu.BindGroupEntry
             {
                 binding = (uint)BindingSlot,
-                offset = (ulong)Offset,
-                size = (ulong)Size,
                 textureView = textureView.wgpuTextureView,
             };
         }
@@ -98,9 +108,7 @@ namespace SharpityEngine.Graphics.Pipeline
     public abstract class BindData
     {
         // Private
-        private int bindingSlot = 0;
-        private long offset = 0;
-        private long size = 0;
+        private int bindingSlot = 0;        
 
         // Properties
         public int BindingSlot
@@ -108,24 +116,12 @@ namespace SharpityEngine.Graphics.Pipeline
             get { return bindingSlot; }
         }
 
-        public long Offset
-        {
-            get { return offset; }
-        }
-
-        public long Size
-        {
-            get { return size; }
-        }
-
         // Constructor
         protected BindData() { }
 
-        protected BindData(int bindingSlot, long offset, long size)
+        protected BindData(int bindingSlot)
         {
             this.bindingSlot = bindingSlot;
-            this.offset = offset;
-            this.size = size;
         }
 
         // Methods

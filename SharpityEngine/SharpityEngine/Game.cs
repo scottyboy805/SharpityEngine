@@ -12,6 +12,7 @@ namespace SharpityEngine
         private TypeManager typeManager = null;
         private GamePlatform platform = null;
         private GameWindow window = null;
+        private GraphicsSurface graphicsSurface = null;
         private GraphicsDevice graphicsDevice = null;
         private GameModules gameModules = null;
 
@@ -61,9 +62,19 @@ namespace SharpityEngine
             get { return window; }
         }
 
+        public GraphicsSurface GraphicsSurface
+        {
+            get { return graphicsSurface; }
+        }
+
         public GraphicsDevice GraphicsDevice
         {
             get { return graphicsDevice; }
+        }
+
+        internal GameModules GameModules
+        {
+            get { return gameModules; }
         }
 
         public abstract bool IsHeadless { get; }
@@ -83,7 +94,7 @@ namespace SharpityEngine
         }
 
         // Constructor
-        internal Game(TypeManager typeManager, GamePlatform platform, GameWindow window, GraphicsDevice graphicsDevice)
+        internal Game(TypeManager typeManager, GamePlatform platform, GameWindow window, GraphicsSurface graphicsSurface, GraphicsDevice graphicsDevice)
         {
             // Store current instance
             current = this;
@@ -91,6 +102,7 @@ namespace SharpityEngine
             this.typeManager = typeManager;
             this.platform = platform;
             this.window = window;
+            this.graphicsSurface = graphicsSurface; 
             this.graphicsDevice = graphicsDevice;
             this.gameModules = new GameModules();
         }
@@ -187,6 +199,8 @@ namespace SharpityEngine
             frameRenderTimer.Restart();
             //            OnFrameRenderBegin();
 
+            graphicsSurface.GetCurrentTextureView();
+
             gameModules.OnBeforeDraw();
 
             // Draw modules
@@ -232,8 +246,8 @@ namespace SharpityEngine
 
             gameModules.OnAfterDraw();
 
-            // Swap buffers
-            window.SwapBuffers();
+            // Present surface
+            graphicsSurface.Present();
         }
 
         protected internal virtual void DoGameShutdown()

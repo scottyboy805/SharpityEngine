@@ -134,16 +134,23 @@ namespace SharpityEngine
             GraphicsSurface surface = GraphicsSurface.CreateSurface(window);
 
             // Create graphics device
-            GraphicsAdapter adapter = await GraphicsAdapter.CreateAsync(surface, GraphicsBackend.Default, GraphicsPowerMode.HighPower);
+            GraphicsAdapter adapter = await GraphicsAdapter.CreateAsync(surface, 0, 0);
             GraphicsDevice device = null;
 
             // Create device
             if (adapter != null)
                 device = await adapter.RequestDeviceAsync();
 
+            // Get preferred format
+            TextureFormat swapSurfaceFormat = surface.GetPreferredFormat(adapter);
+
+            // Prepare surface
+            surface.Prepare(device, PresentMode.Fifo, swapSurfaceFormat, TextureUsage.RenderAttachment);
+
+
 
             // Create the game provider
-            gameProvider = CreateGame(window, device);
+            gameProvider = CreateGame(window, surface, device);
 
             // Initialize the game
             gameProvider.DoGameInitialize();
@@ -181,7 +188,7 @@ namespace SharpityEngine
 
         public abstract GameWindow CreateWindow(string title, int width, int height, bool fullscreen);
 
-        public abstract Game CreateGame(GameWindow window, GraphicsDevice device);
+        public abstract Game CreateGame(GameWindow window, GraphicsSurface surface, GraphicsDevice device);
 
         public abstract void OpenURL(string url);
     }

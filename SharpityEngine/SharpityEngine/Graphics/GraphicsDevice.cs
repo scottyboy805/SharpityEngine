@@ -91,14 +91,14 @@ namespace SharpityEngine.Graphics
             }
         }
 
-        public GraphicsBuffer CreateBuffer(ulong size, BufferUsage usage)
+        public GraphicsBuffer CreateBuffer(long size, BufferUsage usage)
         {
             // Create desc
             Wgpu.BufferDescriptor desc = new Wgpu.BufferDescriptor
             {
                 label = null,
                 mappedAtCreation = 0u,
-                size = size,
+                size = (ulong)size,
                 usage = (uint)usage,
             };
 
@@ -155,6 +155,7 @@ namespace SharpityEngine.Graphics
                 size = new Wgpu.Extent3D
                 {
                     width = (uint)length,
+                    depthOrArrayLayers = 1,
                 },
                 format = (Wgpu.TextureFormat)format,
                 mipLevelCount = (uint)mipLevel,
@@ -184,6 +185,7 @@ namespace SharpityEngine.Graphics
                 {
                     width = (uint)width,
                     height = (uint)height,
+                    depthOrArrayLayers = 1,
                 },
                 format = (Wgpu.TextureFormat)format,
                 mipLevelCount = (uint)mipLevel,
@@ -294,7 +296,7 @@ namespace SharpityEngine.Graphics
             return new Shader(wgpuDevice, wgpuShader, shaderSource);
         }
 
-        public unsafe BindGroupLayout CreateBindGroupLayout(BindLayoutData[] layoutData)
+        public unsafe BindGroupLayout CreateBindGroupLayout(params BindLayoutData[] layoutData)
         {
             // Create entry
             Span<Wgpu.BindGroupLayoutEntry> wgpuEntries = stackalloc Wgpu.BindGroupLayoutEntry[layoutData.Length];
@@ -321,7 +323,7 @@ namespace SharpityEngine.Graphics
             return new BindGroupLayout(wgpuBindGroupLayout);
         }
 
-        public unsafe BindGroup CreateBindGroup(BindGroupLayout layout, BindData[] bindData)
+        public unsafe BindGroup CreateBindGroup(BindGroupLayout layout, params BindData[] bindData)
         {
             // Create entry
             Span<Wgpu.BindGroupEntry> wgpuEntries = stackalloc Wgpu.BindGroupEntry[bindData.Length];

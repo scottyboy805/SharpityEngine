@@ -9,7 +9,7 @@ namespace SharpityEngine.Graphics.Pipeline
         [DataMember(Name = "BufferType")]
         private BufferBindingType bufferType = BufferBindingType.Uniform;
         [DataMember(Name = "MinBindingSize")]
-        private ulong minBindingSize = 0;
+        private long minBindingSize = 0;
 
         // Properties
         public BufferBindingType BufferType
@@ -17,9 +17,19 @@ namespace SharpityEngine.Graphics.Pipeline
             get { return bufferType; }
         }
 
-        public ulong MinBindingSize
+        public long MinBindingSize
         {
             get { return minBindingSize; }
+        }
+
+        // Constructor
+        public BufferBindLayoutData() { }
+
+        public BufferBindLayoutData(BufferBindingType bufferType, long minBindingSize, int bindSlot, ShaderStage shaderStage)
+            : base(bindSlot, shaderStage)
+        {
+            this.bufferType = bufferType;
+            this.minBindingSize = minBindingSize;
         }
 
         // Methods
@@ -33,7 +43,7 @@ namespace SharpityEngine.Graphics.Pipeline
                 {
                     type = (Wgpu.BufferBindingType)bufferType,
                     hasDynamicOffset = 0,
-                    minBindingSize = minBindingSize,
+                    minBindingSize = (ulong)minBindingSize,
                 },
             };
         }
@@ -49,6 +59,15 @@ namespace SharpityEngine.Graphics.Pipeline
         public SamplerBindingType SamplerType
         {
             get { return samplerType; }
+        }
+
+        // Constructor
+        public SamplerBindLayoutData() { }
+
+        public SamplerBindLayoutData(SamplerBindingType samplerType, int bindSlot, ShaderStage shaderStage)
+            : base(bindSlot, shaderStage)
+        {
+            this.samplerType = samplerType;
         }
 
         // Methods
@@ -92,6 +111,17 @@ namespace SharpityEngine.Graphics.Pipeline
             get { return multisampled; }
         }
 
+        // Constructor
+        public TextureBindLayoutData() { }
+
+        public TextureBindLayoutData(TextureSampleType sampleType, TextureViewDimension viewDimension, bool multisampled, int bindSlot, ShaderStage shaderStage)
+            : base(bindSlot, shaderStage)
+        {
+            this.sampleType = sampleType;
+            this.viewDimension = viewDimension;
+            this.multisampled = multisampled;
+        }
+
         // Methods
         internal override Wgpu.BindGroupLayoutEntry GetLayoutEntry()
         {
@@ -128,6 +158,16 @@ namespace SharpityEngine.Graphics.Pipeline
             get { return viewDimension; }
         }
 
+        // Constructor
+        public StorageTextureBindLayoutData() { }
+
+        public StorageTextureBindLayoutData(TextureFormat format, TextureViewDimension viewDimension, int bindSlot, ShaderStage shaderStage)
+            : base(bindSlot, shaderStage)
+        {
+            this.format = format;
+            this.viewDimension = viewDimension;
+        }
+
         // Methods
         internal override Wgpu.BindGroupLayoutEntry GetLayoutEntry()
         {
@@ -162,6 +202,15 @@ namespace SharpityEngine.Graphics.Pipeline
         public ShaderStage ShaderStage
         {
             get { return shaderStage; }
+        }
+
+        // Constructor
+        protected BindLayoutData() { }
+
+        protected BindLayoutData(int bindSlot, ShaderStage shaderStage)
+        {
+            this.bindingSlot = bindSlot;
+            this.shaderStage = shaderStage;
         }
 
         // Methods

@@ -53,9 +53,9 @@ namespace SharpityEngine_SDL
             return (sdlWindow = new SDL2_GameWindow(title, width, height, fullscreen));
         }
 
-        public override Game CreateGame(GameWindow window, GraphicsDevice graphicsDevice)
+        public override Game CreateGame(GameWindow window, GraphicsSurface surface, GraphicsDevice graphicsDevice)
         {
-            return new SDL2_Game(TypeManager, this, window, graphicsDevice);
+            return new SDL2_Game(TypeManager, this, window, surface, graphicsDevice);
         }
 
         public override void OpenURL(string url)

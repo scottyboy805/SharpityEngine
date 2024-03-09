@@ -76,6 +76,14 @@ namespace SharpityEngine.Graphics
             Wgpu.SurfaceTexture wgpuSurfaceTexture = default;
             Wgpu.SurfaceGetCurrentTexture(wgpuSurface, ref wgpuSurfaceTexture);
 
+            // Assign out
+            status = (SurfaceTextureStatus)wgpuSurfaceTexture.status;
+            suboptimal = (int)wgpuSurfaceTexture.suboptimal;
+
+            // Check for error
+            if (wgpuSurfaceTexture.status != Wgpu.SurfaceGetCurrentTextureStatus.Success)
+                return null;
+
             // Create texture desc
             Wgpu.TextureDescriptor wgpuTextureDesc = new Wgpu.TextureDescriptor
             {
@@ -91,10 +99,6 @@ namespace SharpityEngine.Graphics
                 sampleCount = Wgpu.TextureGetSampleCount(wgpuSurfaceTexture.texture),
                 mipLevelCount = Wgpu.TextureGetMipLevelCount(wgpuSurfaceTexture.texture),
             };
-
-            // Assign out
-            status = (SurfaceTextureStatus)wgpuSurfaceTexture.status;
-            suboptimal = (int)wgpuSurfaceTexture.suboptimal;
 
             // Check for error
             if (status != SurfaceTextureStatus.Success)

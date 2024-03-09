@@ -205,15 +205,6 @@ namespace SharpityEngine_SDL
             SDL.SDL_RaiseWindow(windowPtr);
         }
 
-        public override void SwapBuffers()
-        {
-            // Check for Open gl render backend
-            //if (Platform.GraphicsBackend == Simple2D.Graphics.GraphicsBackend.OpenGL)
-            {
-                //SDL.SDL_GL_SwapWindow(windowPtr);
-            }
-        }
-
         protected override void OnSetBordered(bool on)
         {
             SDL.SDL_SetWindowBordered(windowPtr, on == true 
@@ -264,8 +255,7 @@ namespace SharpityEngine_SDL
             SDL.SDL_GetWindowWMInfo(windowPtr, ref wmInfo);
 
             // Get hinstance
-            //hinstance = wmInfo.info.win.hdc;
-            hinstance = Process.GetCurrentProcess().Handle;
+            hinstance = IntPtr.Zero;// wmInfo.info.win.hdc;
 
             // Get HWND
             hwnd = wmInfo.info.win.window;

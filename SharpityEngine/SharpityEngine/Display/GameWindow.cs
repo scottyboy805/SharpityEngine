@@ -156,8 +156,6 @@ namespace SharpityEngine
 
         public abstract void Close();
 
-        public abstract void SwapBuffers();
-
         protected abstract void OnSetPosition(in Point2 position);
 
         protected abstract void OnSetSize(in Point2 size);
