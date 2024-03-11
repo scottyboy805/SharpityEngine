@@ -60,32 +60,46 @@ namespace SharpityEngine.Graphics
                 (ulong)data.Length * tSize);
         }
 
-        //public unsafe void WriteTexture<T>(Texture texture, ReadOnlySpan<T> data, int bytesPerRow, int rowsPerImage, int offset = 0, TextureAspect aspect = TextureAspect.All, Point3 origin = default, int mipLevel = 0)
-        //{
-        //    // Create image copy
-        //    Wgpu.ImageCopyTexture copyDesc = new Wgpu.ImageCopyTexture
-        //    {
-        //        texture = texture.wgpuTexture,
-        //        aspect = (Wgpu.TextureAspect)aspect,
-        //        origin = new Wgpu.Origin3D { x = (uint)origin.X, y = (uint)origin.Y, z = (uint)origin.Z },
-        //        mipLevel = (uint)mipLevel,
-        //    };
+        public void WriteTexture<T>(ReadOnlySpan<T> data, Texture texture, in TextureDataLayout layout)
+        {
+            WriteTexture(data, new TextureCopy(texture), layout);
+        }
 
-        //    // Create texture layout
-        //    Wgpu.TextureDataLayout layoutDesc = new Wgpu.TextureDataLayout
-        //    {
-        //        bytesPerRow = (uint)bytesPerRow,
-        //        rowsPerImage = (uint)rowsPerImage,
-        //        offset = (uint)offset,
-        //    };
+        public unsafe void WriteTexture<T>(ReadOnlySpan<T> data, in TextureCopy copy, in TextureDataLayout layout, int width = -1, int height = -1, int depthOrArrayLayers = -1)
+        {
+            // Create image copy
+            Wgpu.ImageCopyTexture copyDesc = new Wgpu.ImageCopyTexture
+            {
+                texture = copy.Texture.wgpuTexture,
+                aspect = (Wgpu.TextureAspect)copy.Aspect,
+                origin = new Wgpu.Origin3D { x = (uint)copy.Origin.X, y = (uint)copy.Origin.Y, z = (uint)copy.Origin.Z },
+                mipLevel = (uint)copy.MipLevel,
+            };
 
-        //    ulong tSize = (ulong)sizeof(T);
+            // Create texture layout
+            Wgpu.TextureDataLayout layoutDesc = new Wgpu.TextureDataLayout
+            {
+                bytesPerRow = (uint)layout.BytesPerRow,
+                rowsPerImage = (uint)layout.RowsPerTexture,
+                offset = (uint)layout.Offset,
+            };
 
-        //    // Write texture
-        //    Wgpu.QueueWriteTexture(wgpuQueue, copyDesc,
-        //        (IntPtr)Unsafe.AsPointer(ref MemoryMarshal.GetReference(data)),
-        //        (ulong)data.Length * (ulong)tSize,
-        //        layoutDesc, )
-        //}
+            // Create write size
+            Wgpu.Extent3D writeSizeDesc = new Wgpu.Extent3D
+            {
+                width = (uint)(width == -1 ? copy.Texture.Width : width),
+                height = (uint)(height == -1 ? copy.Texture.Height : height),
+                depthOrArrayLayers = (uint)(depthOrArrayLayers == -1 ? copy.Texture.DepthOrLayers : depthOrArrayLayers),
+            };
+            
+            // Get size of data element
+            ulong tSize = (ulong)sizeof(T);
+
+            // Write texture
+            Wgpu.QueueWriteTexture(wgpuQueue, copyDesc,
+                (IntPtr)Unsafe.AsPointer(ref MemoryMarshal.GetReference(data)),
+                (ulong)data.Length * (ulong)tSize,
+                layoutDesc, writeSizeDesc);
+        }
     }
 }

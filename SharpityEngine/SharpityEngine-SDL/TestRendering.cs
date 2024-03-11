@@ -74,16 +74,16 @@ namespace SharpityEngine_SDL
             shader = game.GraphicsDevice.CreateShader(shaderSource);
 
             // Create bind group layout
-            bindGroupLayout = game.GraphicsDevice.CreateBindGroupLayout(
-                new BufferBindLayoutData(BufferBindingType.Uniform, sizeof(UniformBuffer), 0, ShaderStage.Vertex),
-                new SamplerBindLayoutData(SamplerBindingType.Filtering, 1, ShaderStage.Fragment),
-                new TextureBindLayoutData(TextureSampleType.Float, TextureViewDimension.Texture2D, false, 2, ShaderStage.Fragment));
+            //bindGroupLayout = game.GraphicsDevice.CreateBindGroupLayout(
+            //    new BufferBindLayoutData(BufferBindingType.Uniform, sizeof(UniformBuffer), 0, ShaderStage.Vertex),
+            //    new SamplerBindLayoutData(SamplerBindingType.Filtering, 1, ShaderStage.Fragment),
+            //    new TextureBindLayoutData(TextureSampleType.Float, TextureViewDimension.Texture2D, false, 2, ShaderStage.Fragment));
 
-            // Create bind group
-            bindGroup = game.GraphicsDevice.CreateBindGroup(bindGroupLayout,
-                new BufferBindData(uniformBuffer, 0, 0, sizeof(UniformBuffer)),
-                new SamplerBindData(sampler, 1),
-                new TextureBindData(texture.CreateView(), 2));
+            //// Create bind group
+            //bindGroup = game.GraphicsDevice.CreateBindGroup(bindGroupLayout,
+            //    new BufferBindData(uniformBuffer, 0, 0, sizeof(UniformBuffer)),
+            //    new SamplerBindData(sampler, 1),
+            //    new TextureBindData(texture.CreateView(), 2));
 
 
             depthTexture = game.GraphicsDevice.CreateTexture2D(game.Window.Width, game.Window.Height, TextureFormat.Depth32Float, TextureUsage.RenderAttachment);

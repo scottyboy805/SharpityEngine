@@ -1,4 +1,8 @@
 ﻿
+using System.Reflection.Metadata.Ecma335;
+using System.Runtime.CompilerServices;
+using WGPU.NET;
+
 namespace SharpityEngine.Graphics.Pipeline
 {
     public enum BlendFactor
@@ -97,48 +101,55 @@ namespace SharpityEngine.Graphics.Pipeline
 
     public struct ColorTargetState
     {
-        // Private
-        private TextureFormat format;
-        private BlendState blendState;
-        private bool hasBlendState;
-        private ColorWriteMask writeMask;
-
-        // Properties
-        public TextureFormat Format
-        {
-            get { return format; }
-        }
-
-        public BlendState BlendState
-        {
-            get { return blendState; }
-        }
-
-        public bool HasBlendState
-        {
-            get { return hasBlendState; }
-        }
-
-        public ColorWriteMask WriteMask
-        {
-            get { return writeMask; }
-        }
+        // Public
+        public TextureFormat Format;
+        public ColorWriteMask WriteMask;
+        public BlendState? BlendState;
 
         // Constructor
-        public ColorTargetState(TextureFormat format, ColorWriteMask writeMask)
+        public ColorTargetState(TextureFormat format, ColorWriteMask writeMask, BlendState? blendState = null)
         {
-            this.format = format;
-            this.blendState = default;
-            this.hasBlendState = false;
-            this.writeMask = writeMask;
+            this.Format = format;
+            this.WriteMask = writeMask;
+            this.BlendState = blendState;
         }
 
-        public ColorTargetState(TextureFormat format, BlendState blendState, ColorWriteMask writeMask)
+        // Methods
+        internal unsafe Wgpu.ColorTargetState GetColorState()
         {
-            this.format = format;
-            this.blendState = blendState;
-            this.hasBlendState = true;
-            this.writeMask = writeMask;
+            IntPtr blendPtr = IntPtr.Zero;
+
+            // Blend state
+            if(BlendState != null)
+            {
+                // Create blend state
+                Wgpu.BlendState wgpuBlendState = new Wgpu.BlendState
+                {
+                    color = new Wgpu.BlendComponent
+                    {
+                        operation = (Wgpu.BlendOperation)BlendState?.Color.BlendOperation,
+                        srcFactor = (Wgpu.BlendFactor)BlendState?.Color.SrcBlendFactor,
+                        dstFactor = (Wgpu.BlendFactor)BlendState?.Color.DstBlendFactor,
+                    },
+                    alpha = new Wgpu.BlendComponent
+                    {
+                        operation = (Wgpu.BlendOperation)BlendState?.Alpha.BlendOperation,
+                        srcFactor = (Wgpu.BlendFactor)BlendState?.Alpha.SrcBlendFactor,
+                        dstFactor = (Wgpu.BlendFactor)BlendState?.Alpha.DstBlendFactor,
+                    },
+                };
+
+                // Update ptr
+                blendPtr = new IntPtr(&wgpuBlendState);
+            }
+
+            // Create desc
+            return new Wgpu.ColorTargetState
+            {
+                format = (Wgpu.TextureFormat)Format,
+                writeMask = (uint)WriteMask,
+                blend = blendPtr,
+            };
         }
     }
 
@@ -173,6 +184,26 @@ namespace SharpityEngine.Graphics.Pipeline
         {
             this.entryPoint = entryPoint;
             this.colorTargets = colorTargets;
+        }
+
+        // Methods
+        internal unsafe Wgpu.FragmentState GetFragmentState(Shader shader)
+        {
+            // Create array
+            Span<Wgpu.ColorTargetState> wgpuColorTargetStates = stackalloc Wgpu.ColorTargetState[colorTargets.Length];
+
+            // Fill data
+            for(int i = 0; i < colorTargets.Length; i++)
+                wgpuColorTargetStates[i] = colorTargets[i].GetColorState();
+
+            // Create desc
+            return new Wgpu.FragmentState
+            {
+                module = shader.wgpuShader,
+                entryPoint = entryPoint,
+                targets = new IntPtr(Unsafe.AsPointer(ref wgpuColorTargetStates.GetPinnableReference())),
+                targetCount = (uint)colorTargets.Length,
+            };
         }
     }
 }

@@ -1,4 +1,7 @@
 ﻿
+using System.Runtime.CompilerServices;
+using WGPU.NET;
+
 namespace SharpityEngine.Graphics.Pipeline
 {
     public enum VertexStepMode
@@ -46,8 +49,8 @@ namespace SharpityEngine.Graphics.Pipeline
     {
         // Private
         private VertexFormat format;
-        private ulong offset;
-        private uint shaderLocation;
+        private long offset;
+        private int shaderLocation;
 
         // Properties
         public VertexFormat Format
@@ -55,18 +58,18 @@ namespace SharpityEngine.Graphics.Pipeline
             get { return format; }
         }
 
-        public ulong Offset
+        public long Offset
         {
             get { return offset; }
         }
 
-        public uint ShaderLocation
+        public int ShaderLocation
         {
             get { return shaderLocation; }
         }
 
         // Constructor
-        public VertexAttribute(VertexFormat format, ulong offset, uint shaderLocation)
+        public VertexAttribute(VertexFormat format, long offset, int shaderLocation)
         {
             this.format = format;
             this.offset = offset;
@@ -77,12 +80,12 @@ namespace SharpityEngine.Graphics.Pipeline
     public struct VertexBufferLayout
     {
         // Private
-        private ulong arrayStride;
+        private long arrayStride;
         private VertexStepMode stepMode;
         private VertexAttribute[] attributes;
 
         // Properties
-        public ulong ArrayStride
+        public long ArrayStride
         {
             get { return arrayStride; }
         }
@@ -98,18 +101,45 @@ namespace SharpityEngine.Graphics.Pipeline
         }
         
         // Constructor
-        public VertexBufferLayout(ulong arrayStride, params VertexAttribute[] attributes)
+        public VertexBufferLayout(long arrayStride, params VertexAttribute[] attributes)
         {
             this.arrayStride = arrayStride;
             this.stepMode = VertexStepMode.Vertex;
             this.attributes = attributes;
         }
 
-        public VertexBufferLayout(ulong arrayStride, VertexStepMode stepMode, params VertexAttribute[] attributes)
+        public VertexBufferLayout(long arrayStride, VertexStepMode stepMode, params VertexAttribute[] attributes)
         {
             this.arrayStride = arrayStride;
             this.stepMode = stepMode;
             this.attributes = attributes;
+        }
+
+        // Methods
+        internal unsafe Wgpu.VertexBufferLayout GetBufferLayout()
+        {
+            // Create array
+            Span<Wgpu.VertexAttribute> wgpuVertexAttributes = stackalloc Wgpu.VertexAttribute[attributes.Length];
+
+            // Fill data
+            for (int i = 0; i < attributes.Length; i++)
+            {
+                wgpuVertexAttributes[i] = new Wgpu.VertexAttribute
+                {
+                    format = (Wgpu.VertexFormat)attributes[i].Format,
+                    offset = (ulong)attributes[i].Offset,
+                    shaderLocation = (uint)attributes[i].ShaderLocation,
+                };
+            }
+
+            // Create desc
+            return new Wgpu.VertexBufferLayout
+            {
+                arrayStride = (ulong)arrayStride,
+                stepMode = (Wgpu.VertexStepMode)stepMode,
+                attributes = new IntPtr(Unsafe.AsPointer(ref wgpuVertexAttributes.GetPinnableReference())),
+                attributeCount = (uint)attributes.Length
+            };
         }
     }
 
@@ -144,6 +174,26 @@ namespace SharpityEngine.Graphics.Pipeline
         {
             this.entryPoint = entryPoint;
             this.bufferLayouts = bufferLayouts;
+        }
+
+        // Methods
+        internal unsafe Wgpu.VertexState GetVertexState(Shader shader)
+        {
+            // Create array
+            Span<Wgpu.VertexBufferLayout> wgpuBufferLayouts = stackalloc Wgpu.VertexBufferLayout[bufferLayouts.Length];
+
+            // Fill data
+            for (int i = 0; i < bufferLayouts.Length; i++)
+                wgpuBufferLayouts[i] = bufferLayouts[i].GetBufferLayout();
+
+            // Create state
+            return new Wgpu.VertexState
+            {
+                module = shader.wgpuShader, 
+                entryPoint = entryPoint,
+                buffers = new IntPtr(Unsafe.AsPointer(ref wgpuBufferLayouts.GetPinnableReference())),
+                bufferCount = (uint)bufferLayouts.Length,
+            };
         }
     }
 }

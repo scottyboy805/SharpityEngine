@@ -71,6 +71,14 @@ namespace SharpityEngine.Graphics.Pipeline
             Wgpu.RenderPassEncoderEndPipelineStatisticsQuery(wgpuRenderEncoder);
         }
 
+        public unsafe void SetBindGroup(BindGroup group, int groupIndex, int[] dynamicOffsets = null)
+        {
+            fixed (int* offsetsPtr = dynamicOffsets)
+            {
+                Wgpu.RenderPassEncoderSetBindGroup(wgpuRenderEncoder, (uint)groupIndex, group.wgpuBindGroup, dynamicOffsets != null ? (uint)dynamicOffsets.Length : 0u, ref Unsafe.AsRef<uint>(offsetsPtr));
+            }
+        }
+
         public void SetIndexBuffer(GraphicsBuffer buffer, IndexFormat format, long offset, long size)
         {
             Wgpu.RenderPassEncoderSetIndexBuffer(wgpuRenderEncoder, buffer.wgpuBuffer, (Wgpu.IndexFormat)format, (ulong)offset, (ulong)size);

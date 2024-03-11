@@ -15,6 +15,18 @@ namespace SharpityEngine.Graphics.Pipeline
         Discard = 0x00000002,
     }
 
+    public enum StencilOperation : int
+    {
+        Keep = 0x00000000,
+        Zero = 0x00000001,
+        Replace = 0x00000002,
+        Invert = 0x00000003,
+        IncrementClamp = 0x00000004,
+        DecrementClamp = 0x00000005,
+        IncrementWrap = 0x00000006,
+        DecrementWrap = 0x00000007,
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     public struct ColorAttachment
     {

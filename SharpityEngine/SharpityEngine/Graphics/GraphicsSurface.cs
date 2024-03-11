@@ -151,7 +151,7 @@ namespace SharpityEngine.Graphics
             Wgpu.SurfacePresent(wgpuSurface);
         }
 
-        public static GraphicsSurface CreateSurface(GameWindow window)
+        public static GraphicsSurface CreateSurface(IGraphicsContext window)
         {
             Wgpu.InstanceImpl wgpuInstance = Wgpu.CreateInstance(default);
             Wgpu.SurfaceImpl wgpuSurface = default;

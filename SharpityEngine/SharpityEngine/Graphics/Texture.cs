@@ -179,6 +179,40 @@ namespace SharpityEngine.Graphics
         Always = 0x00000008,
     }
 
+    public struct TextureCopy
+    {
+        // Public
+        public Texture Texture;
+        public int MipLevel;
+        public Point3 Origin;
+        public TextureAspect Aspect;
+
+        // Constructor
+        public TextureCopy(Texture texture, int mipLevel = 0, Point3 origin = default, TextureAspect aspect = TextureAspect.All)
+        {
+            this.Texture = texture;
+            this.MipLevel = mipLevel;
+            this.Origin = origin;
+            this.Aspect = aspect;
+        }
+    }
+
+    public struct TextureDataLayout
+    {
+        // Public
+        public long Offset;
+        public int BytesPerRow;
+        public int RowsPerTexture;
+
+        // Constructor
+        public TextureDataLayout(int bytesPerRow, int rowsPerTexture, long offset = 0)
+        {
+            this.Offset = offset;
+            this.BytesPerRow = bytesPerRow;
+            this.RowsPerTexture = rowsPerTexture;
+        }
+    }
+
     public sealed class Sampler : IDisposable
     {
         // Internal

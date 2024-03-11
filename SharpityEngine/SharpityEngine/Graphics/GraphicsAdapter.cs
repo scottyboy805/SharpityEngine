@@ -126,7 +126,7 @@ namespace SharpityEngine.Graphics
             }
         }
 
-        public async  Task<GraphicsDevice> RequestDeviceAsync()
+        public async Task<GraphicsDevice> RequestDeviceAsync()
         {
             bool completed = false;
             GraphicsDevice requestedDevice = null;

@@ -65,12 +65,12 @@ namespace SharpityEngine_SDL
             }
         }
 
-        public int RenderWidth
+        public override int RenderWidth
         {
             get { return Size.X; }
         }
 
-        public int RenderHeight
+        public override int RenderHeight
         {
             get { return Size.Y; }
         }
@@ -255,7 +255,7 @@ namespace SharpityEngine_SDL
             SDL.SDL_GetWindowWMInfo(windowPtr, ref wmInfo);
 
             // Get hinstance
-            hinstance = IntPtr.Zero;// wmInfo.info.win.hdc;
+            hinstance = wmInfo.info.win.hinstance;
 
             // Get HWND
             hwnd = wmInfo.info.win.window;

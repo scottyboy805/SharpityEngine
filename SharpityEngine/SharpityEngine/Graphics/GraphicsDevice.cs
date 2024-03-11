@@ -364,12 +364,108 @@ namespace SharpityEngine.Graphics
             return new CommandList(wgpuEncoder);
         }
 
-        //public GraphicsRenderPipeline CreateRenderPipeline(Shader shader)
-        //{
+        public unsafe RenderPipelineLayout CreateRenderPipelineLayout(params BindGroupLayout[] bindGroupLayouts)
+        {
+            // Create entry
+            Span<Wgpu.BindGroupLayoutImpl> wgpuBindGroupLayouts = stackalloc Wgpu.BindGroupLayoutImpl[bindGroupLayouts.Length];
 
-        //}
+            // Fill out data
+            for (int i = 0; i < bindGroupLayouts.Length; i++)
+                wgpuBindGroupLayouts[i] = bindGroupLayouts[i].wgpuBindGroupLayout;
 
-        
+            // Create desc
+            Wgpu.PipelineLayoutDescriptor wgpuPipelineLayoutDesc = new Wgpu.PipelineLayoutDescriptor
+            {
+                bindGroupLayouts = new IntPtr(Unsafe.AsPointer(ref wgpuBindGroupLayouts.GetPinnableReference())),
+                bindGroupLayoutCount = (uint)bindGroupLayouts.Length,
+            };
+
+            // Create pipeline layout
+            Wgpu.PipelineLayoutImpl wgpuPipelineLayout = Wgpu.DeviceCreatePipelineLayout(wgpuDevice, wgpuPipelineLayoutDesc);
+
+            // Check for error
+            if(wgpuPipelineLayout.Handle == IntPtr.Zero) 
+                return null;
+
+            // Create result
+            return new RenderPipelineLayout(wgpuPipelineLayout);
+        }
+
+        public unsafe RenderPipeline CreateRenderPipeline(RenderPipelineLayout layout, Shader shader, in RenderPipelineState state)
+        {
+            //IntPtr fragmentStatePtr = IntPtr.Zero, depthStencilPtr = IntPtr.Zero;
+
+            //// Get fragment state
+            //if (state.FragmentState != null)
+            //    fragmentStatePtr = AllocStructPtr(state.FragmentState.Value
+            //        .GetFragmentState(shader));
+
+            //// Get depth state
+            //if (state.DepthStencilState != null)
+            //    depthStencilPtr = AllocStructPtr(state.DepthStencilState.Value
+            //        .GetDepthStencilState());
+
+            // Create desc
+            Wgpu.RenderPipelineDescriptor wgpuRenderPipelineDesc = new Wgpu.RenderPipelineDescriptor
+            {
+                layout = layout.wgpuPipelineLayout,
+                vertex = new Wgpu.VertexState
+                {
+                    module = shader.wgpuShader,
+                    entryPoint = state.VertexState.EntryPoint,
+                    buffers = AllocStructEnumerablePtr(state.VertexState.BufferLayouts.Select(b => new Wgpu.VertexBufferLayout
+                    {
+                        arrayStride = (ulong)b.ArrayStride,
+                        stepMode = (Wgpu.VertexStepMode)b.StepMode,
+                        attributes = AllocStructArrayPtr(b.Attributes),
+                        attributeCount = (uint)b.Attributes.Length,
+                    }), state.VertexState.BufferLayouts.Length),
+                    bufferCount = (uint)state.VertexState.BufferLayouts.Length,
+                },
+                primitive = new Wgpu.PrimitiveState
+                {
+                    topology = (Wgpu.PrimitiveTopology)state.PrimitiveState.Topology,
+                    stripIndexFormat = (Wgpu.IndexFormat)state.PrimitiveState.StripIndexFormat,
+                    frontFace = (Wgpu.FrontFace)state.PrimitiveState.FrontFace,
+                    cullMode = (Wgpu.CullMode)state.PrimitiveState.CullMode,
+                },
+                multisample = new Wgpu.MultisampleState
+                {
+                    count = (uint)state.MultisampleState.Count,
+                    mask = state.MultisampleState.Mask,
+                    alphaToCoverageEnabled = state.MultisampleState.AlphaToCoverageEnabled ? 1u : 0u,
+                },
+                fragment = state.FragmentState != null ? AllocStructPtr(new Wgpu.FragmentState
+                {
+                    module = shader.wgpuShader,
+                    entryPoint = state.FragmentState.Value.EntryPoint,
+                    targets = AllocStructEnumerablePtr(state.FragmentState.Value.ColorTargets.Select(c => new Wgpu.ColorTargetState
+                    {
+                        format = (Wgpu.TextureFormat)c.Format,
+                        blend = c.BlendState != null ? AllocStructPtr(c.BlendState.Value) : IntPtr.Zero,
+                        writeMask = (uint)c.WriteMask,
+                    }), state.FragmentState.Value.ColorTargets.Length),
+                    targetCount = (uint)state.FragmentState.Value.ColorTargets.Length,
+                }) : IntPtr.Zero,
+                depthStencil = state.DepthStencilState != null ? AllocStructPtr(state.DepthStencilState.Value) : IntPtr.Zero,
+            };
+
+            // Create pipeline
+            Wgpu.RenderPipelineImpl wgpuRenderPipeline = Wgpu.DeviceCreateRenderPipeline(wgpuDevice, wgpuRenderPipelineDesc);
+
+            //// Free memory
+            //if(fragmentStatePtr != IntPtr.Zero) Marshal.FreeHGlobal(fragmentStatePtr);
+            //if(depthStencilPtr != IntPtr.Zero) Marshal.FreeHGlobal(depthStencilPtr);
+
+            // Check for created
+            if (wgpuRenderPipeline.Handle == IntPtr.Zero)
+                return null;
+
+            // Create result
+            return new RenderPipeline(wgpuRenderPipeline);
+        }
+
+
 
         public unsafe QuerySet CreateQuerySet(QueryType type, int count, PipelineStatisticName[] pipelineStatistics)
         {
@@ -397,7 +493,41 @@ namespace SharpityEngine.Graphics
 
         private static void ErrorCallback(Wgpu.ErrorType type, string message)
         {
+            Console.WriteLine(type.ToString() + ": " + message);
             Debug.LogErrorF(LogFilter.Graphics, "Device error!: [{0}] - {1}", type, message);
+        }
+
+        private static IntPtr AllocStructPtr<T>(T val) where T : struct
+        {
+            IntPtr ptr = Marshal.AllocHGlobal(Marshal.SizeOf(val));
+            Marshal.StructureToPtr(val, ptr, false);
+
+            return ptr;
+        }
+
+        private static unsafe IntPtr AllocStructEnumerablePtr<T>(IEnumerable<T> items, int count) where T : struct
+        {
+            IntPtr ptr = Marshal.AllocHGlobal(Marshal.SizeOf<T>() * count);
+            Span<T> arrSpan = new Span<T>((void*)ptr, count);
+            int index = 0;
+
+            foreach(T item in items)
+            {
+                arrSpan[index] = item;
+                index++;
+            }
+            return ptr;
+        }
+
+        private static unsafe IntPtr AllocStructArrayPtr<T>(T[] arr) where T : struct
+        {
+            IntPtr ptr = Marshal.AllocHGlobal(Marshal.SizeOf<T>() * arr.Length);
+            Span<T> arrSpan = new Span<T>((void*)ptr, arr.Length);
+
+            for(int i = 0; i < arr.Length; i++)
+                arrSpan[i] = arr[i];
+
+            return ptr;
         }
     }
 }

@@ -1,7 +1,9 @@
 ﻿
+using SharpityEngine.Graphics.Context;
+
 namespace SharpityEngine
 {
-    public abstract class GameWindow
+    public abstract class GameWindow : IGraphicsContext
     {
         // Events        
         public GameEvent<Point2> OnRepositioned = new GameEvent<Point2>();
@@ -141,6 +143,10 @@ namespace SharpityEngine
         }
 
         public abstract bool Focused { get; }
+
+        public abstract int RenderWidth { get; }
+
+        public abstract int RenderHeight { get; }
 
         // Constructor
         protected GameWindow(string title, int width, int height, bool fullscreen)
