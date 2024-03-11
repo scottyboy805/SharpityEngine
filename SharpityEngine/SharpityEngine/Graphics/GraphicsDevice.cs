@@ -144,7 +144,7 @@ namespace SharpityEngine.Graphics
             return bufferCreated;
         }
 
-        public Texture CreateTexture1D(int length, TextureFormat format, TextureUsage usage = TextureUsage.TextureBinding, int mipLevel = 1, int sampleCount = 1)
+        public Texture CreateTexture1D(int length, TextureFormat format, TextureUsage usage = TextureUsage.TextureBinding | TextureUsage.CopyDst, int mipLevel = 1, int sampleCount = 1)
         {
             // Create desc
             Wgpu.TextureDescriptor wgpuTextureDesc = new Wgpu.TextureDescriptor
@@ -173,7 +173,7 @@ namespace SharpityEngine.Graphics
             return new Texture(wgpuTexture, wgpuTextureDesc);
         }
 
-        public Texture CreateTexture2D(int width, int height, TextureFormat format, TextureUsage usage = TextureUsage.TextureBinding, int mipLevel = 1, int sampleCount = 1)
+        public Texture CreateTexture2D(int width, int height, TextureFormat format, TextureUsage usage = TextureUsage.TextureBinding | TextureUsage.CopyDst, int mipLevel = 1, int sampleCount = 1)
         {
             // Create desc
             Wgpu.TextureDescriptor wgpuTextureDesc = new Wgpu.TextureDescriptor
@@ -203,7 +203,7 @@ namespace SharpityEngine.Graphics
             return new Texture(wgpuTexture, wgpuTextureDesc);
         }
 
-        public Texture CreateTexture3D(int width, int height, int depth, TextureFormat format, TextureUsage usage = TextureUsage.TextureBinding, int mipLevel = 1, int sampleCount = 1)
+        public Texture CreateTexture3D(int width, int height, int depth, TextureFormat format, TextureUsage usage = TextureUsage.TextureBinding | TextureUsage.CopyDst, int mipLevel = 1, int sampleCount = 1)
         {
             // Create desc
             Wgpu.TextureDescriptor wgpuTextureDesc = new Wgpu.TextureDescriptor

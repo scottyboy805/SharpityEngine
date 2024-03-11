@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using SharpityEngine.Content;
+using System.Reflection;
 using System.Runtime.Serialization;
 
 namespace SharpityEngine
@@ -10,7 +11,7 @@ namespace SharpityEngine
 
         // Private
         private Game game = null;
-        //private ContentBundle contentBundle = null;
+        private ContentBundle contentBundle = null;
         private bool isDestroying = false;
         private bool isDestroyed = false;
 
@@ -73,11 +74,11 @@ namespace SharpityEngine
             internal set { guid = value; }
         }
 
-        //public ContentBundle ContentBundle
-        //{
-        //    get { return contentBundle; }
-        //    internal set { contentBundle = value; }
-        //}
+        public ContentBundle ContentBundle
+        {
+            get { return contentBundle; }
+            internal set { contentBundle = value; }
+        }
 
         public string ContentPath
         {

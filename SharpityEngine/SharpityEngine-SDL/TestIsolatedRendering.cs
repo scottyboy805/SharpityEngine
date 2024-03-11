@@ -6,6 +6,7 @@ using System.Numerics;
 using SharpityEngine.Graphics.Context;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using SharpityEngine.Content;
 
 namespace SharpityEngine_SDL
 {
@@ -77,40 +78,22 @@ namespace SharpityEngine_SDL
             // Uniform buffer
             GraphicsBuffer uniformBuffer = device.CreateBuffer(sizeof(UniformBuffer), BufferUsage.Uniform | BufferUsage.CopyDst);
 
-            var image = Image.Load<Rgba32>(Path.Combine("Resources", "WGPU-Logo.png"));
+            //var image = Image.Load<Rgba32>(Path.Combine("Resources", "WGPU-Logo.png"));
+
+
+            SharpityEngine.Game game = new SDL2_Game(new SharpityEngine.TypeManager(), new SDL2_GamePlatform(), null, surface, device);
+            FileContentProvider content = new FileContentProvider(Environment.CurrentDirectory);
+
+            Texture texture = content.Load<Texture>("Resources/WGPU-Logo.png");
 
             // Texture
-            Texture texture = device.CreateTexture2D(image.Width, image.Height, TextureFormat.RGBA8Unorm, TextureUsage.TextureBinding | TextureUsage.CopyDst);
+            //Texture texture = device.CreateTexture2D(image.Width, image.Height, TextureFormat.RGBA8Unorm, TextureUsage.TextureBinding | TextureUsage.CopyDst);
 
-            Span<Rgba32> pixels = new Rgba32[image.Width * image.Height];
-            image.CopyPixelDataTo(pixels);
+            //Span<Rgba32> pixels = new Rgba32[image.Width * image.Height];
+            //image.CopyPixelDataTo(pixels);
 
-            // Write texture data
-            device.Queue.WriteTexture<Rgba32>(pixels, texture, new TextureDataLayout(sizeof(Rgba32) * image.Width, image.Height));
-
-            //{
-            //    Span<Rgba32> pixels = new Rgba32[image.Width * image.Height];
-
-            //    image.CopyPixelDataTo(pixels);
-
-            //    device.Queue.WriteTexture<Rgba32>(
-            //        destination: new ImageCopyTexture
-            //        {
-            //            Aspect = Wgpu.TextureAspect.All,
-            //            MipLevel = 0,
-            //            Origin = default,
-            //            Texture = imageTexture
-            //        },
-            //        data: pixels,
-            //        dataLayout: new Wgpu.TextureDataLayout
-            //        {
-            //            bytesPerRow = (uint)(sizeof(Rgba32) * image.Width),
-            //            offset = 0,
-            //            rowsPerImage = (uint)image.Height
-            //        },
-            //        writeSize: imageSize
-            //    );
-            //}
+            //// Write texture data
+            //device.Queue.WriteTexture<Rgba32>(pixels, texture, new TextureDataLayout(sizeof(Rgba32) * image.Width, image.Height));
 
             // Sampler
             Sampler sampler = device.CreateSampler(WrapMode.ClampToEdge, FilterMode.Linear);

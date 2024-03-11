@@ -68,6 +68,24 @@ namespace SharpityEngine
             return string.Format("{0}({1})", GetType().FullName, nameInfo);
         }
 
+        public Component GetComponent(Type type, bool includeDisabled = false, string tag = null)
+        {
+            // Get transform
+            if (type == typeof(Transform))
+                return transform;
+
+            // Get components
+            if(components != null)
+            {
+                foreach (Component component in components)
+                {
+                    if (type.IsAssignableFrom(component.elementType) == true && CheckComponent(component, includeDisabled, tag) == true)
+                        return component;
+                }
+            }
+            return null;
+        }
+
         public T GetComponent<T>(bool includeDisabled = false, string tag = null) where T : class
         {
             // Get transform
@@ -187,8 +205,9 @@ namespace SharpityEngine
 
             // Search for components
             return BFSSearchComponentsParent<T>(this, isTransform, results, includeDisabled, tag);
-        }        
+        }
 
+        #region SearchComponents(T)
         private static T BFSSearchComponentChildren<T>(GameObject current, bool includeDisabled, string tag) where T : class
         {
             // Check for any components
@@ -364,6 +383,7 @@ namespace SharpityEngine
 
             return count;
         }
+        #endregion
 
         private static bool CheckComponent(Component component, bool includeDisabled, string tag)
         {
