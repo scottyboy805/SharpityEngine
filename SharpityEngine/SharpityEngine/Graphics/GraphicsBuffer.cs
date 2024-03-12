@@ -34,9 +34,9 @@ namespace SharpityEngine.Graphics
         internal Wgpu.BufferDescriptor wgpuBufferDesc;
 
         // Properties
-        public ulong SizeInBytes
+        public long SizeInBytes
         {
-            get { return wgpuBufferDesc.size; }
+            get { return (long)wgpuBufferDesc.size; }
         }
 
         public BufferUsage Usage

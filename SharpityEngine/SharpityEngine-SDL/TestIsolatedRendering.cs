@@ -7,6 +7,7 @@ using SharpityEngine.Graphics.Context;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SharpityEngine.Content;
+using Vector3 = SharpityEngine.Vector3;
 
 namespace SharpityEngine_SDL
 {
@@ -60,15 +61,29 @@ namespace SharpityEngine_SDL
             // Create device
             GraphicsDevice device = adapter.RequestDeviceAsync().Result;
 
-            Span<Vertex> vertices = new Vertex[]
-            {
-                new Vertex(new(-1, -1, 0), new(1, 1, 0, 1), new(-.2f, 1.0f)),
-                new Vertex(new(1, -1, 0), new(0, 1, 1, 1), new(1.2f, 1.0f)),
-                new Vertex(new(0, 1, 0), new(1, 0, 1, 1), new(0.5f, -.5f)),
-            };
 
-            // Vertex buffer
-            GraphicsBuffer vertexBuffer = device.CreateBuffer<Vertex>(vertices, BufferUsage.Vertex);
+            SharpityEngine.Game game = new SDL2_Game(new SharpityEngine.TypeManager(), new SDL2_GamePlatform(), null, surface, adapter, device);
+            FileContentProvider content = new FileContentProvider(Environment.CurrentDirectory);
+
+
+            //Span<Vertex> vertices = new Vertex[]
+            //{
+            //    new Vertex(new(-1, -1, 0), new(1, 1, 0, 1), new(-.2f, 1.0f)),
+            //    new Vertex(new(1, -1, 0), new(0, 1, 1, 1), new(1.2f, 1.0f)),
+            //    new Vertex(new(0, 1, 0), new(1, 0, 1, 1), new(0.5f, -.5f)),
+            //};
+
+            //// Vertex buffer
+            //GraphicsBuffer vertexBuffer = device.CreateBuffer<Vertex>(vertices, BufferUsage.Vertex);
+
+            Mesh mesh = new Mesh();
+            Mesh.SubMesh subMesh = mesh.CreateSubMesh();
+            subMesh.Vertices.Add(new(-1, -1, 0)); subMesh.Vertices.Add(new(1, -1, 0)); subMesh.Vertices.Add(new (0, 1, 0));
+            subMesh.Colors.Add(new(1, 1, 0, 1)); subMesh.Colors.Add(new(0, 1, 1, 1)); subMesh.Colors.Add(new(1, 0, 1, 1));
+            subMesh.UVs_0.Add(new(-.2f, 1.0f)); subMesh.UVs_0.Add(new(1.2f, 1.0f)); subMesh.UVs_0.Add(new(0.5f, -0.5f));
+            mesh.Finalize();
+
+            GraphicsBuffer vertexBuffer = subMesh.VertexBuffer;
 
             UniformBuffer uniformBufferData = new UniformBuffer
             {
@@ -81,9 +96,7 @@ namespace SharpityEngine_SDL
             //var image = Image.Load<Rgba32>(Path.Combine("Resources", "WGPU-Logo.png"));
 
 
-            SharpityEngine.Game game = new SDL2_Game(new SharpityEngine.TypeManager(), new SDL2_GamePlatform(), null, surface, device);
-            FileContentProvider content = new FileContentProvider(Environment.CurrentDirectory);
-
+            
             Texture texture = content.Load<Texture>("Resources/WGPU-Logo.png");
 
             // Texture
@@ -225,7 +238,7 @@ namespace SharpityEngine_SDL
                 renderPass.SetPipeline(renderPipeline);
 
                 renderPass.SetBindGroup(bindGroup, 0);
-                renderPass.SetVertexBuffer(vertexBuffer, 0, 0, (vertices.Length * sizeof(Vertex)));
+                renderPass.SetVertexBuffer(vertexBuffer, 0, 0, (/*vertices.Length*/subMesh.Vertices.Count * sizeof(Vertex)));
                 renderPass.Draw(3, 1, 0, 0);
                 renderPass.End();
 

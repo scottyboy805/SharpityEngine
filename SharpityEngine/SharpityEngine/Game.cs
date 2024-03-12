@@ -13,6 +13,7 @@ namespace SharpityEngine
         private GamePlatform platform = null;
         private GameWindow window = null;
         private GraphicsSurface graphicsSurface = null;
+        private GraphicsAdapter graphicsAdapter = null;
         private GraphicsDevice graphicsDevice = null;
         private GameModules gameModules = null;
 
@@ -67,6 +68,11 @@ namespace SharpityEngine
             get { return graphicsSurface; }
         }
 
+        public GraphicsAdapter GraphicsAdapter
+        {
+            get { return graphicsAdapter; }
+        }
+
         public GraphicsDevice GraphicsDevice
         {
             get { return graphicsDevice; }
@@ -94,7 +100,7 @@ namespace SharpityEngine
         }
 
         // Constructor
-        internal Game(TypeManager typeManager, GamePlatform platform, GameWindow window, GraphicsSurface graphicsSurface, GraphicsDevice graphicsDevice)
+        internal Game(TypeManager typeManager, GamePlatform platform, GameWindow window, GraphicsSurface graphicsSurface, GraphicsAdapter graphicsAdapter, GraphicsDevice graphicsDevice)
         {
             // Store current instance
             current = this;
@@ -103,6 +109,7 @@ namespace SharpityEngine
             this.platform = platform;
             this.window = window;
             this.graphicsSurface = graphicsSurface; 
+            this.graphicsAdapter = graphicsAdapter;
             this.graphicsDevice = graphicsDevice;
             this.gameModules = new GameModules();
         }

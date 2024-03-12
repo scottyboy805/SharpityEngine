@@ -1,10 +1,9 @@
-﻿
-using SharpityEngine.Graphics.Pipeline;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 
 namespace SharpityEngine
 {
+    [DataContract]
     public struct Vector4 : IEquatable<Vector4>
     {
         // Public

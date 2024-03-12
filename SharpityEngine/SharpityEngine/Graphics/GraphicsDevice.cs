@@ -113,6 +113,11 @@ namespace SharpityEngine.Graphics
             return new GraphicsBuffer(wgpuDevice, buffer, desc);
         }
 
+        public GraphicsBuffer CreateBuffer<T>(Span<T> data, BufferUsage usage) where T : unmanaged
+        {
+            return CreateBuffer<T>((ReadOnlySpan<T>)data, usage);
+        }
+
         public GraphicsBuffer CreateBuffer<T>(ReadOnlySpan<T> data, BufferUsage usage) where T : unmanaged
         {
             // Create desc

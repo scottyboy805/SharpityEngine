@@ -60,9 +60,19 @@ namespace SharpityEngine.Graphics
                 (ulong)data.Length * tSize);
         }
 
+        public void WriteTexture<T>(Span<T> data, Texture texture, in TextureDataLayout layout)
+        {
+            WriteTexture<T>((ReadOnlySpan<T>)data, texture, layout);
+        }
+
         public void WriteTexture<T>(ReadOnlySpan<T> data, Texture texture, in TextureDataLayout layout)
         {
             WriteTexture(data, new TextureCopy(texture), layout);
+        }
+
+        public void WriteTexture<T>(Span<T> data, in TextureCopy copy, in TextureDataLayout layout, int width = -1, int height = -1, int depthOrArrayLayers = -1)
+        {
+            WriteTexture<T>((ReadOnlySpan<T>)data, copy, layout, width, height, depthOrArrayLayers);
         }
 
         public unsafe void WriteTexture<T>(ReadOnlySpan<T> data, in TextureCopy copy, in TextureDataLayout layout, int width = -1, int height = -1, int depthOrArrayLayers = -1)

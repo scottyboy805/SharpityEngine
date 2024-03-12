@@ -1,4 +1,5 @@
 ﻿using SharpityEngine.Graphics.Pipeline;
+using System.Runtime.Serialization;
 using WGPU.NET;
 
 namespace SharpityEngine.Graphics
@@ -45,16 +46,45 @@ namespace SharpityEngine.Graphics
         // Internal
         internal Wgpu.DeviceImpl wgpuDevice;
         internal Wgpu.ShaderModuleImpl wgpuShader;
+        internal BindGroupLayout bindGroupLayout = null;
+        internal RenderPipelineLayout renderPipelineLayout = null;
+        internal RenderPipeline renderPipeline = null;
 
         // Private
+        [DataMember(Name = "Topology")]
+        private PrimitiveTopology topology = PrimitiveTopology.TriangleStrip;
+        [DataMember(Name = "FrontFace")]
         private FrontFace frontFace = FrontFace.CCW;
+        [DataMember(Name = "CullMode")]
         private CullMode cullMode = CullMode.Back;
-
-        private VertexState vertexState;
-        private FragmentState fragmentState;
-        private BindLayoutData[] bindingLayoutGroup;
+        [DataMember(Name = "VertexState")]
+        private VertexState vertexState = new VertexState(Mesh.MeshBufferLayout);
+        [DataMember(Name = "FragmentState")]
+        private FragmentState fragmentState = new FragmentState(
+                new ColorTargetState(TextureFormat.BGRA8Unorm, ColorWriteMask.All,
+                    new BlendState(
+                        new BlendComponent(BlendOperation.Add, BlendFactor.One, BlendFactor.Zero),
+                        new BlendComponent(BlendOperation.Add, BlendFactor.One, BlendFactor.Zero))));
+        [DataMember(Name = "BindingLayoutData")]
+        private unsafe BindLayoutData[] bindingLayoutData = 
+        {
+            BindLayoutData.Buffer(BufferBindingType.Uniform, sizeof(Matrix4), 0, ShaderStage.Vertex),
+            BindLayoutData.Sampler(SamplerBindingType.Filtering, 1, ShaderStage.Fragment),
+            BindLayoutData.Texture(TextureSampleType.Float, TextureViewDimension.Texture2D, 2, ShaderStage.Fragment)
+        };
+        [DataMember(Name = "MultisampleState")]
+        private MultisampleState multisampleState = new MultisampleState(1);
+        [DataMember(Name = "DepthStenclState")]
+        private DepthStencilState depthStencilState = new DepthStencilState(TextureFormat.Depth32Float, CompareFunction.Always, new StencilFaceState(CompareFunction.Always));
+        [DataMember(Name = "RenderQueue")]
+        private int renderQueue = 1000;
 
         // Properties
+        public PrimitiveTopology Topology
+        {
+            get { return topology; }
+        }
+
         public FrontFace FrontFace
         {
             get { return frontFace; }
@@ -75,18 +105,16 @@ namespace SharpityEngine.Graphics
             get { return fragmentState; }
         }
 
-        public BindLayoutData[] BindingLayoutGroup
+        public int RenderQueue
         {
-            get { return bindingLayoutGroup; }
+            get { return renderQueue; }
+            set { renderQueue = value; }
         }
 
         // Constructor
         internal Shader(Wgpu.DeviceImpl wgpuDevice)
         {
             this.wgpuDevice = wgpuDevice;
-
-            // Create binding group
-            //bindGroupLayout = CreateBindGroup(device);
         }
 
         internal Shader(Wgpu.DeviceImpl wgpuDevice, Wgpu.ShaderModuleImpl wgpuShader, string shaderSource)
@@ -127,6 +155,24 @@ namespace SharpityEngine.Graphics
                 // Store shader
                 this.wgpuShader = wgpuShader;
             }
+
+
+            // Get surface format
+            TextureFormat surfaceFormat = Game.GraphicsSurface.GetPreferredFormat(Game.GraphicsAdapter);
+
+            // Update fragment state
+            for(int i = 0; i < fragmentState.ColorTargets.Length; i++)
+                fragmentState.ColorTargets[i].Format = surfaceFormat;
+
+            // Create bind group layout
+            bindGroupLayout = Game.GraphicsDevice.CreateBindGroupLayout(bindingLayoutData);
+
+            // Create pipeline layout
+            renderPipelineLayout = Game.GraphicsDevice.CreateRenderPipelineLayout(bindGroupLayout);
+
+            // Create render pipeline
+            renderPipeline = Game.GraphicsDevice.CreateRenderPipeline(renderPipelineLayout, this, new RenderPipelineState(
+                vertexState, fragmentState, new PrimitiveState(topology, IndexFormat.Undefined, frontFace, cullMode), multisampleState, depthStencilState));
         }
 
         protected override void OnDestroy()
@@ -135,19 +181,22 @@ namespace SharpityEngine.Graphics
 
             if (wgpuShader.Handle != IntPtr.Zero)
             {
+                // Release render pipeline
+                renderPipeline.Dispose();
+                renderPipeline = null;
+
+                // Release pipeline layout
+                renderPipelineLayout.Dispose();
+                renderPipelineLayout = null;
+
+                // Release bind group layout
+                bindGroupLayout.Dispose();
+                bindGroupLayout = null;
+
                 // Release shader
                 Wgpu.ShaderModuleRelease(wgpuShader);
                 wgpuShader = default;
-
-                //// Release binding group
-                //bindGroupLayout.Dispose();
-                //bindGroupLayout = null;
             }
         }
-
-        //private BindGroupLayout CreateBindGroup(Device device)
-        //{
-        //    return device.CreateBindgroupLayout("Layout");
-        //}
     }
 }

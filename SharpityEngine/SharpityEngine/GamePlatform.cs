@@ -150,7 +150,7 @@ namespace SharpityEngine
 
 
             // Create the game provider
-            gameProvider = CreateGame(window, surface, device);
+            gameProvider = CreateGame(window, surface, adapter, device);
 
             // Initialize the game
             gameProvider.DoGameInitialize();
@@ -188,7 +188,7 @@ namespace SharpityEngine
 
         public abstract GameWindow CreateWindow(string title, int width, int height, bool fullscreen);
 
-        public abstract Game CreateGame(GameWindow window, GraphicsSurface surface, GraphicsDevice device);
+        public abstract Game CreateGame(GameWindow window, GraphicsSurface surface, GraphicsAdapter adapter, GraphicsDevice device);
 
         public abstract void OpenURL(string url);
     }

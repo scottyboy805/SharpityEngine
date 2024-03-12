@@ -24,8 +24,8 @@ namespace SharpityEngine_SDL
         }
 
         // Constructor
-        public SDL2_Game(TypeManager typeManager, GamePlatform platform, GameWindow window, GraphicsSurface graphicsSurface, GraphicsDevice graphicsDevice)
-            : base(typeManager, platform, window, graphicsSurface, graphicsDevice)
+        public SDL2_Game(TypeManager typeManager, GamePlatform platform, GameWindow window, GraphicsSurface graphicsSurface, GraphicsAdapter graphicsAdapter, GraphicsDevice graphicsDevice)
+            : base(typeManager, platform, window, graphicsSurface, graphicsAdapter, graphicsDevice)
         {
             isRunning = true;
 
