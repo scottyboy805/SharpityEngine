@@ -122,57 +122,19 @@ namespace SharpityEngine.Graphics
         {
             this.wgpuDevice = wgpuDevice;
             this.wgpuShader = wgpuShader;
+
+            // Trigger loaded
+            OnAfterLoaded();
         }
 
         // Methods
-        protected async override void OnLoaded()
+        protected override void OnLoaded()
         {
             // Call base
             base.OnLoaded();
 
-            // Check for shader asset
-            if(wgpuShader.Handle == IntPtr.Zero)
-            {
-                // Create desc
-                Wgpu.ShaderModuleDescriptor wgpuShaderDesc = new Wgpu.ShaderModuleDescriptor
-                {
-                    label = Name,
-                    nextInChain = new WgpuStructChain()
-                        .AddShaderModuleWGSLDescriptor(await GetTextAsync())
-                        .GetPointer(),
-                };
-
-                // Create shader
-                Wgpu.ShaderModuleImpl wgpuShader = Wgpu.DeviceCreateShaderModule(wgpuDevice, wgpuShaderDesc);
-
-                // Check for error
-                if (wgpuShader.Handle == IntPtr.Zero)
-                {
-                    Debug.LogError("Failed to create shader!");
-                    return;
-                }
-
-                // Store shader
-                this.wgpuShader = wgpuShader;
-            }
-
-
-            // Get surface format
-            TextureFormat surfaceFormat = Game.GraphicsSurface.GetPreferredFormat(Game.GraphicsAdapter);
-
-            // Update fragment state
-            for(int i = 0; i < fragmentState.ColorTargets.Length; i++)
-                fragmentState.ColorTargets[i].Format = surfaceFormat;
-
-            // Create bind group layout
-            bindGroupLayout = Game.GraphicsDevice.CreateBindGroupLayout(bindingLayoutData);
-
-            // Create pipeline layout
-            renderPipelineLayout = Game.GraphicsDevice.CreateRenderPipelineLayout(bindGroupLayout);
-
-            // Create render pipeline
-            renderPipeline = Game.GraphicsDevice.CreateRenderPipeline(renderPipelineLayout, this, new RenderPipelineState(
-                vertexState, fragmentState, new PrimitiveState(topology, IndexFormat.Undefined, frontFace, cullMode), multisampleState, depthStencilState));
+            // Create pipeline
+            CreateRenderPipeline();
         }
 
         protected override void OnDestroy()
@@ -197,6 +159,26 @@ namespace SharpityEngine.Graphics
                 Wgpu.ShaderModuleRelease(wgpuShader);
                 wgpuShader = default;
             }
+        }
+
+        private void CreateRenderPipeline()
+        {
+            // Get surface format
+            TextureFormat surfaceFormat = Game.GraphicsSurface.GetPreferredFormat(Game.GraphicsAdapter);
+
+            // Update fragment state
+            for (int i = 0; i < fragmentState.ColorTargets.Length; i++)
+                fragmentState.ColorTargets[i].Format = surfaceFormat;
+
+            // Create bind group layout
+            bindGroupLayout = Game.GraphicsDevice.CreateBindGroupLayout(bindingLayoutData);
+
+            // Create pipeline layout
+            renderPipelineLayout = Game.GraphicsDevice.CreateRenderPipelineLayout(bindGroupLayout);
+
+            // Create render pipeline
+            renderPipeline = Game.GraphicsDevice.CreateRenderPipeline(renderPipelineLayout, this, new RenderPipelineState(
+                vertexState, fragmentState, new PrimitiveState(topology, IndexFormat.Undefined, frontFace, cullMode), multisampleState, depthStencilState));
         }
     }
 }

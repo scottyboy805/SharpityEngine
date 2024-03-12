@@ -66,22 +66,13 @@ namespace SharpityEngine_SDL
             FileContentProvider content = new FileContentProvider(Environment.CurrentDirectory);
 
 
-            //Span<Vertex> vertices = new Vertex[]
-            //{
-            //    new Vertex(new(-1, -1, 0), new(1, 1, 0, 1), new(-.2f, 1.0f)),
-            //    new Vertex(new(1, -1, 0), new(0, 1, 1, 1), new(1.2f, 1.0f)),
-            //    new Vertex(new(0, 1, 0), new(1, 0, 1, 1), new(0.5f, -.5f)),
-            //};
-
-            //// Vertex buffer
-            //GraphicsBuffer vertexBuffer = device.CreateBuffer<Vertex>(vertices, BufferUsage.Vertex);
-
+            // Create mesh triangle
             Mesh mesh = new Mesh();
             Mesh.SubMesh subMesh = mesh.CreateSubMesh();
             subMesh.Vertices.Add(new(-1, -1, 0)); subMesh.Vertices.Add(new(1, -1, 0)); subMesh.Vertices.Add(new (0, 1, 0));
             subMesh.Colors.Add(new(1, 1, 0, 1)); subMesh.Colors.Add(new(0, 1, 1, 1)); subMesh.Colors.Add(new(1, 0, 1, 1));
             subMesh.UVs_0.Add(new(-.2f, 1.0f)); subMesh.UVs_0.Add(new(1.2f, 1.0f)); subMesh.UVs_0.Add(new(0.5f, -0.5f));
-            mesh.Finalize();
+            mesh.Apply();
 
             GraphicsBuffer vertexBuffer = subMesh.VertexBuffer;
 
@@ -93,64 +84,24 @@ namespace SharpityEngine_SDL
             // Uniform buffer
             GraphicsBuffer uniformBuffer = device.CreateBuffer(sizeof(UniformBuffer), BufferUsage.Uniform | BufferUsage.CopyDst);
 
-            //var image = Image.Load<Rgba32>(Path.Combine("Resources", "WGPU-Logo.png"));
-
-
-            
+            // Load texture content
             Texture texture = content.Load<Texture>("Resources/WGPU-Logo.png");
-
-            // Texture
-            //Texture texture = device.CreateTexture2D(image.Width, image.Height, TextureFormat.RGBA8Unorm, TextureUsage.TextureBinding | TextureUsage.CopyDst);
-
-            //Span<Rgba32> pixels = new Rgba32[image.Width * image.Height];
-            //image.CopyPixelDataTo(pixels);
-
-            //// Write texture data
-            //device.Queue.WriteTexture<Rgba32>(pixels, texture, new TextureDataLayout(sizeof(Rgba32) * image.Width, image.Height));
 
             // Sampler
             Sampler sampler = device.CreateSampler(WrapMode.ClampToEdge, FilterMode.Linear);
 
-            // Bind group layout
-            BindGroupLayout bindGroupLayout = device.CreateBindGroupLayout(
-                BindLayoutData.Buffer(BufferBindingType.Uniform, sizeof(UniformBuffer), 0, ShaderStage.Vertex),
-                BindLayoutData.Sampler(SamplerBindingType.Filtering, 1, ShaderStage.Fragment),
-                BindLayoutData.Texture(TextureSampleType.Float, TextureViewDimension.Texture2D, 2, ShaderStage.Fragment));
-
-            // Bind group
-            BindGroup bindGroup = device.CreateBindGroup(bindGroupLayout,
-                BindData.Buffer(uniformBuffer, 0, 0, sizeof(UniformBuffer)),
-                BindData.Sampler(sampler, 1),
-                BindData.Texture(texture.CreateView(), 2));
-
             // Shader
             Shader shader = device.CreateShader(File.ReadAllText("shader.wgsl"));
 
-            // Pipeline layout
-            RenderPipelineLayout pipelineLayout = device.CreateRenderPipelineLayout(bindGroupLayout);
+            // Material
+            Material material = new Material(shader);
 
-            // Vertex state
-            VertexState vertexState = new VertexState(
-                new VertexBufferLayout(sizeof(Vertex),
-                    new VertexAttribute(VertexFormat.Float32x3, 0, 0),                                      // Pos
-                    new VertexAttribute(VertexFormat.Float32x4, sizeof(Vector3), 1),                        // Col
-                    new VertexAttribute(VertexFormat.Float32x2, sizeof(Vector3) + sizeof(Vector4), 2)));    // UV
+            material.SetBuffer(uniformBuffer, 0);
+            material.SetSampler(sampler, 1);
+            material.SetTextureView(texture.CreateView(), 2);
+            material.Apply();
 
             TextureFormat swapChainFormat = surface.GetPreferredFormat(adapter);
-
-            // Fragment state
-            FragmentState fragmentState = new FragmentState(
-                new ColorTargetState(swapChainFormat, ColorWriteMask.All,
-                    new BlendState(
-                        new BlendComponent(BlendOperation.Add, BlendFactor.One, BlendFactor.Zero),
-                        new BlendComponent(BlendOperation.Add, BlendFactor.One, BlendFactor.Zero))));
-
-            // Render pipeline
-            RenderPipeline renderPipeline = device.CreateRenderPipeline(pipelineLayout, shader, new RenderPipelineState(
-                vertexState, fragmentState, new PrimitiveState(PrimitiveTopology.TriangleStrip, IndexFormat.Undefined),
-                new MultisampleState(1), new DepthStencilState(TextureFormat.Depth32Float, CompareFunction.Always,
-                    new StencilFaceState(CompareFunction.Always))));
-
 
             //glfw.GetWindowSize(window, out int prevWidth, out int prevHeight);
             SDL.SDL_GetWindowSize(window, out int prevWidth, out int prevHeight);
@@ -173,8 +124,6 @@ namespace SharpityEngine_SDL
             {
                 SDL.SDL_GetMouseState(out int mouseX, out int mouseY);
                 SDL.SDL_GetWindowSize(window, out int width, out int height);
-                //glfw.GetCursorPos(window, out double mouseX, out double mouseY);
-                //glfw.GetWindowSize(window, out int width, out int height);
 
                 if ((width != prevWidth || height != prevHeight) && width != 0 && height != 0)
                 {
@@ -235,10 +184,10 @@ namespace SharpityEngine_SDL
                 }, new DepthStencilAttachment(depthTextureView));
 
 
-                renderPass.SetPipeline(renderPipeline);
+                renderPass.SetPipeline(material.Shader.renderPipeline);
 
-                renderPass.SetBindGroup(bindGroup, 0);
-                renderPass.SetVertexBuffer(vertexBuffer, 0, 0, (/*vertices.Length*/subMesh.Vertices.Count * sizeof(Vertex)));
+                renderPass.SetBindGroup(material.bindGroup, 0);
+                renderPass.SetVertexBuffer(vertexBuffer, 0, 0, (subMesh.Vertices.Count * sizeof(Vertex)));
                 renderPass.Draw(3, 1, 0, 0);
                 renderPass.End();
 
@@ -263,10 +212,6 @@ namespace SharpityEngine_SDL
                 SDL.SDL_PumpEvents();
             }
         }
-
-
-        //glfw.DestroyWindow(window);
-        //glfw.Terminate();
 
         private static Matrix4x4 CreatePerspective(float fov, float aspectRatio, float near, float far)
         {

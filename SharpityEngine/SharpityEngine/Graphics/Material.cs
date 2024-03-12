@@ -23,8 +23,8 @@ namespace SharpityEngine.Graphics
         public Shader Shader
         {
             get { return shader; }
-            set 
-            { 
+            set
+            {
                 shader = value;
                 UpdateBindData();
             }
@@ -33,6 +33,14 @@ namespace SharpityEngine.Graphics
         public int RenderQueue
         {
             get { return shader != null ? shader.RenderQueue : -1; }
+        }
+
+        // Constructor
+        public Material() { }
+
+        public Material(Shader shader)
+        {
+            this.shader = shader;
         }
 
         // Methods
@@ -69,26 +77,22 @@ namespace SharpityEngine.Graphics
 
             // Create buffer
             bindingData[slot] = BindData.Buffer(buffer, slot, offset, size);
-
-            // Update bind data
-            UpdateBindData();
         }
 
         public void SetSampler(Sampler sampler, int slot)
         {
             // Create sample
             bindingData[slot] = BindData.Sampler(sampler, slot);
-
-            // Update bind data
-            UpdateBindData();
         }
 
         public void SetTextureView(TextureView textureView, int slot)
         {
             // Create texture
             bindingData[slot] = BindData.Texture(textureView, slot);
+        }
 
-            // Update bind data
+        public void Apply()
+        {
             UpdateBindData();
         }
 

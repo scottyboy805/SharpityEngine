@@ -22,10 +22,10 @@ namespace SharpityEngine.Graphics
         {
             // Public
             public Vector3 Position;            
-            public Vector3 Normal;
+            //public Vector3 Normal;
             public Color Color;
             public Vector2 UV_0;
-            public Vector2 UV_1;            
+            //public Vector2 UV_1;            
         }
 
         public sealed class SubMesh
@@ -102,13 +102,20 @@ namespace SharpityEngine.Graphics
         }
 
         // Internal
-        internal unsafe static readonly VertexBufferLayout MeshBufferLayout = 
+        //internal unsafe static readonly VertexBufferLayout MeshBufferLayout =
+        //    new VertexBufferLayout(sizeof(MeshVertex),
+        //    new VertexAttribute(VertexFormat.Float32x3, 0, 0),                                                      // Pos
+        //    new VertexAttribute(VertexFormat.Float32x3, sizeof(Vector3), 1),                                        // Normal
+        //    new VertexAttribute(VertexFormat.Float32x4, sizeof(Vector3) + sizeof(Vector3), 2),                      // Color
+        //    new VertexAttribute(VertexFormat.Float32x2, sizeof(Vector3) + sizeof(Vector3) + sizeof(Vector4), 3));   // UV 0
+        //                                                                                                            //new VertexAttribute(VertexFormat.Float32x2, (sizeof(Vector3) * 2) + sizeof(Vector2), 3));
+
+        internal unsafe static readonly VertexBufferLayout MeshBufferLayout =
             new VertexBufferLayout(sizeof(MeshVertex),
-            new VertexAttribute(VertexFormat.Float32x3, 0, 0),
-            new VertexAttribute(VertexFormat.Float32x3, sizeof(Vector3), 1),
-            new VertexAttribute(VertexFormat.Float32x2, sizeof(Vector3) * 2, 2),
-            new VertexAttribute(VertexFormat.Float32x2, (sizeof(Vector3) * 2) + sizeof(Vector2), 3),
-            new VertexAttribute(VertexFormat.Float32x4, (sizeof(Vector3) * 2) + (sizeof(Vector2) * 2), 4));
+            new VertexAttribute(VertexFormat.Float32x3, 0, 0),                                                      // Pos
+            //new VertexAttribute(VertexFormat.Float32x3, sizeof(Vector3), 1),                                        // Normal
+            new VertexAttribute(VertexFormat.Float32x4, sizeof(Vector3), 1),                      // Color
+            new VertexAttribute(VertexFormat.Float32x2, sizeof(Vector3) + sizeof(Vector4), 2));   // UV 0
 
 
         // Private
@@ -263,23 +270,23 @@ namespace SharpityEngine.Graphics
             }
         }
 
-        public void Finalize(int subMesh = -1)
+        public void Apply(int subMesh = -1)
         {
             // Check for all
             if(subMesh == -1)
             {
                 // Finalize all sub meshes
                 for (int i = 0; i < subMeshes.Count; i++)
-                    FinalizeSubMesh(subMeshes[i]);
+                    ApplySubMesh(subMeshes[i]);
             }
             else
             {
                 // Finalize specific sub mesh
-                FinalizeSubMesh(subMeshes[subMesh]);
+                ApplySubMesh(subMeshes[subMesh]);
             }
         }
 
-        private unsafe void FinalizeSubMesh(SubMesh subMesh)
+        private unsafe void ApplySubMesh(SubMesh subMesh)
         {
             // Invalidate sub mesh
             subMesh.VertexBuffer?.Dispose();
@@ -343,10 +350,10 @@ namespace SharpityEngine.Graphics
                 vertices[i] = new MeshVertex
                 {
                     Position = subMesh.vertices[i],
-                    Normal = (subMeshFlags & MeshFlags.Normals) != 0 ? subMesh.normals[i] : default,
+                    //Normal = (subMeshFlags & MeshFlags.Normals) != 0 ? subMesh.normals[i] : default,
                     Color = (subMeshFlags & MeshFlags.Colors) != 0 ? subMesh.colors[i] : default,
                     UV_0 = (subMeshFlags & MeshFlags.UVs_0) != 0 ? subMesh.uvs_0[i] : default,
-                    UV_1 = (subMeshFlags & MeshFlags.UVs_1) != 0 ? subMesh.uvs_1[i] : default,                    
+                    //UV_1 = (subMeshFlags & MeshFlags.UVs_1) != 0 ? subMesh.uvs_1[i] : default,                    
                 };
             }
 

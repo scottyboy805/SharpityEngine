@@ -45,7 +45,7 @@ namespace SharpityEngine.Graphics.Pipeline
                     binding = (uint)BindingSlot,
                     offset = (ulong)Offset,
                     size = (ulong)Size,
-                    buffer = buffer.wgpuBuffer,
+                    buffer = buffer != null ? buffer.wgpuBuffer : default,
                 };
             }
         }
@@ -74,7 +74,7 @@ namespace SharpityEngine.Graphics.Pipeline
                 return new Wgpu.BindGroupEntry
                 {
                     binding = (uint)BindingSlot,
-                    sampler = sampler.wgpuSampler,
+                    sampler = sampler != null ? sampler.wgpuSampler : default,
                 };
             }
         }
@@ -103,7 +103,7 @@ namespace SharpityEngine.Graphics.Pipeline
                 return new Wgpu.BindGroupEntry
                 {
                     binding = (uint)BindingSlot,
-                    textureView = textureView.wgpuTextureView,
+                    textureView = textureView != null ? textureView.wgpuTextureView : default,
                 };
             }
         }
