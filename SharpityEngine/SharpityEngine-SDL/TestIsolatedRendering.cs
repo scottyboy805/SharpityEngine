@@ -74,7 +74,7 @@ namespace SharpityEngine_SDL
             subMesh.UVs_0.Add(new(-.2f, 1.0f)); subMesh.UVs_0.Add(new(1.2f, 1.0f)); subMesh.UVs_0.Add(new(0.5f, -0.5f));
             mesh.Apply();
 
-            GraphicsBuffer vertexBuffer = subMesh.VertexBuffer;
+            GraphicsBuffer vertexBuffer = subMesh.vertexBuffer;
 
             UniformBuffer uniformBufferData = new UniformBuffer
             {
@@ -89,7 +89,7 @@ namespace SharpityEngine_SDL
 
             // Load mesh content
             Mesh cubeMesh = content.Load<Mesh>("Resources/Cube.fbx");
-            vertexBuffer = cubeMesh.SubMeshes[0].VertexBuffer;
+            vertexBuffer = cubeMesh.SubMeshes[0].vertexBuffer;
 
             // Sampler
             Sampler sampler = device.CreateSampler(WrapMode.ClampToEdge, FilterMode.Linear);

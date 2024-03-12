@@ -10,12 +10,13 @@ namespace SharpityEngine.Graphics
         internal enum MeshFlags
         {
             None = 0,
-            Vertices = 1,
-            Normals = 2,
-            //Tangents = 4,
-            UVs_0 = 8,
-            UVs_1 = 16,
-            Colors = 32,
+            Index = 1,
+            Vertices = 2,
+            Normals = 4,
+            //Tangents = 8,
+            UVs_0 = 16,
+            UVs_1 = 32,
+            Colors = 64,
         }
 
         private struct MeshVertex
@@ -31,12 +32,14 @@ namespace SharpityEngine.Graphics
         public sealed class SubMesh
         {
             // Internal
-            internal GraphicsBuffer VertexBuffer = null;
-            internal VertexBufferLayout VertexBufferLayout = default;
+            internal GraphicsBuffer indexBuffer = null;
+            internal GraphicsBuffer vertexBuffer = null;
+            internal VertexBufferLayout vertexBufferLayout = default;
             internal Bounds bounds = default;
             internal MeshFlags flags = 0;
 
             internal PrimitiveTopology topology = PrimitiveTopology.TriangleStrip;
+            internal IndexFormat indexFormat = IndexFormat.Undefined;
             internal List<Vector3> vertices = null;
             internal List<Vector3> normals = null;
             internal List<Vector2> uvs_0 = null;
@@ -154,11 +157,11 @@ namespace SharpityEngine.Graphics
                 for (int i = 0; i < subMeshes.Count; i++)
                 {
                     // Check for buffer created
-                    if (subMeshes[i].VertexBuffer != null)
+                    if (subMeshes[i].vertexBuffer != null)
                     {
                         // Release buffer
-                        subMeshes[i].VertexBuffer.Dispose();
-                        subMeshes[i].VertexBuffer = null;
+                        subMeshes[i].vertexBuffer.Dispose();
+                        subMeshes[i].vertexBuffer = null;
                     }
                 }
 
@@ -168,11 +171,11 @@ namespace SharpityEngine.Graphics
             else
             {
                 // Check for buffer created
-                if (subMeshes[subMesh].VertexBuffer != null)
+                if (subMeshes[subMesh].vertexBuffer != null)
                 {
                     // Release buffer
-                    subMeshes[subMesh].VertexBuffer.Dispose();
-                    subMeshes[subMesh].VertexBuffer = null;
+                    subMeshes[subMesh].vertexBuffer.Dispose();
+                    subMeshes[subMesh].vertexBuffer = null;
                 }
 
                 subMeshes[subMesh].vertices.Clear();
@@ -295,9 +298,9 @@ namespace SharpityEngine.Graphics
         private unsafe void ApplySubMesh(SubMesh subMesh)
         {
             // Invalidate sub mesh
-            subMesh.VertexBuffer?.Dispose();
-            subMesh.VertexBuffer = null;
-            subMesh.VertexBufferLayout = default;
+            subMesh.vertexBuffer?.Dispose();
+            subMesh.vertexBuffer = null;
+            subMesh.vertexBufferLayout = default;
             subMesh.bounds = default;
             subMesh.flags = default;
 
@@ -344,7 +347,7 @@ namespace SharpityEngine.Graphics
                         
 
             // Create vertex buffer layout
-            subMesh.VertexBufferLayout = MeshBufferLayout;
+            subMesh.vertexBufferLayout = MeshBufferLayout;
 
             // Create vertices
             Span<MeshVertex> vertices = new MeshVertex[subMesh.vertices.Count];
@@ -357,14 +360,14 @@ namespace SharpityEngine.Graphics
                 {
                     Position = subMesh.vertices[i],
                     //Normal = (subMeshFlags & MeshFlags.Normals) != 0 ? subMesh.normals[i] : default,
-                    Color = (subMeshFlags & MeshFlags.Colors) != 0 ? subMesh.colors[i] : default,
+                    Color = (subMeshFlags & MeshFlags.Colors) != 0 ? subMesh.colors[i] : Color.White,
                     UV_0 = (subMeshFlags & MeshFlags.UVs_0) != 0 ? subMesh.uvs_0[i] : default,
                     //UV_1 = (subMeshFlags & MeshFlags.UVs_1) != 0 ? subMesh.uvs_1[i] : default,                    
                 };
             }
 
             // Create buffer
-            subMesh.VertexBuffer = Game.GraphicsDevice.CreateBuffer(vertices, BufferUsage.Vertex, Name + " Vertex Buffer");
+            subMesh.vertexBuffer = Game.GraphicsDevice.CreateBuffer(vertices, BufferUsage.Vertex, Name + " Vertex Buffer");
         }
 
         private static Bounds CalculateBounds(List<Vector3> vertices)

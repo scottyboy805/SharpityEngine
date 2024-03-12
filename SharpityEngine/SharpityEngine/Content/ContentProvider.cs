@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Reflection;
 using Newtonsoft.Json;
 using SharpityEngine.Scene;
@@ -153,7 +154,8 @@ namespace SharpityEngine.Content
             if (GetCachedContent(contentPathOrGuid, out result) == true)
                 return result;
 
-            Debug.Log(LogFilter.Content, "Load content: " + contentPathOrGuid);
+            // Start timing
+            Stopwatch timer = Stopwatch.StartNew();
 
             // Check for null type
             if (type == null)
@@ -201,6 +203,10 @@ namespace SharpityEngine.Content
                 if (result is IContentCallback)
                     ((IContentCallback)result).OnAfterContentLoad();
 
+                // Report loaded
+                Debug.Log(LogFilter.Content, "Load content: " + contentPathOrGuid + " - " + timer.ElapsedMilliseconds + "ms");
+                timer.Stop();
+
                 // Cache the loaded content
                 return AddCachedContent(result, contentPathOrGuid);
             }
@@ -217,7 +223,8 @@ namespace SharpityEngine.Content
             if (GetCachedContent(contentPathOrGuid, out result) == true)
                 return result;
 
-            Debug.Log(LogFilter.Content, "Load content async: " + contentPathOrGuid);
+            // Start timing
+            Stopwatch timer = Stopwatch.StartNew();
 
             // Check for null type
             if (type == null)
@@ -256,6 +263,10 @@ namespace SharpityEngine.Content
                 // Run load events
                 if (result is IContentCallback)
                     ((IContentCallback)result).OnAfterContentLoad();
+
+                // Report loaded
+                Debug.Log(LogFilter.Content, "Load content: " + contentPathOrGuid + " - " + timer.ElapsedMilliseconds + "ms");
+                timer.Stop();
 
                 // Cache the loaded content
                 return AddCachedContent(result, contentPathOrGuid);

@@ -1,5 +1,4 @@
 ﻿using Assimp;
-using System.Runtime.InteropServices;
 
 namespace SharpityEngine.Content.Readers
 {
@@ -61,7 +60,7 @@ namespace SharpityEngine.Content.Readers
             AssimpContext importContext = new AssimpContext();
 
             // Configure
-            importContext.SetConfig(new Assimp.Configs.FBXPreservePivotsConfig(false));
+            importContext.SetConfig(new Assimp.Configs.FBXPreservePivotsConfig(true));
 
             // Post process flags
             PostProcessSteps importFlags = PostProcessSteps.Triangulate
@@ -80,7 +79,7 @@ namespace SharpityEngine.Content.Readers
                 // Check for mesh
                 if (context.HintType == typeof(Graphics.Mesh))
                 {
-                    result = ImportContentAsMesh(scene);
+                    result = AssimpMeshElementContentReader.ImportContentAsSingleMesh(scene);
                 }
             }
 
@@ -90,54 +89,6 @@ namespace SharpityEngine.Content.Readers
 
             // Fallback to game object import
             return Task.FromResult<object>(null);
-        }
-
-        private unsafe object ImportContentAsMesh(Assimp.Scene scene)
-        {
-            Assimp.Mesh mesh = scene.Meshes[0];
-
-            // Create resulting mesh
-            Graphics.Mesh result = new Graphics.Mesh(mesh.Name);
-
-            // Create sub mesh
-            Graphics.Mesh.SubMesh subMesh = result.CreateSubMesh();
-
-            // Get indices
-            int[] indicies = mesh.GetIndices();
-
-            // Vertices
-            Span<Vector3D> vertices = CollectionsMarshal.AsSpan(mesh.Vertices);
-
-            // Resize collection
-            subMesh.Vertices.EnsureCapacity(indicies.Length);
-
-            // Store vertices
-            for (int i = 0; i < indicies.Length; i++)
-            {
-                // Get vertex
-                Vector3D vert = vertices[indicies[i]];
-                subMesh.Vertices.Add(new Vector3(vert.X, vert.Y, vert.Z));
-                subMesh.Colors.Add(Color.White);
-            }
-
-            // UVs
-            Span<Vector3D> uvs = CollectionsMarshal.AsSpan(mesh.TextureCoordinateChannels[0]);
-
-            // Resize collection
-            subMesh.UVs_0.EnsureCapacity(uvs.Length);
-
-            // Store uvs
-            for (int i = 0; i < indicies.Length; i++)
-            {
-                Vector3D uv = uvs[indicies[i]];
-                subMesh.UVs_0.Add(new Vector2(uv.X, uv.Y));
-            }
-
-
-            // Apply mesh
-            result.Apply();
-
-            return result;
         }
     }
 }
