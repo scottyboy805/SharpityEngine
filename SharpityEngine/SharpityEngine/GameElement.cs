@@ -128,9 +128,10 @@ namespace SharpityEngine
         //}
 
         // Constructor
-        protected GameElement()
+        protected GameElement(string name = null)
         {
-            game = Game.Current;
+            this.name = name;
+            this.game = Game.Current;
 
             // Game settings is a special type that gets initialized very early
             if ((this is GameSettings) == false && game != null)
@@ -150,7 +151,8 @@ namespace SharpityEngine
             }
 
             // Get name
-            name = elementType.Name;
+            if(name == null)
+                name = elementType.Name;
         }
 
         // Methods

@@ -55,7 +55,7 @@ namespace SharpityEngine.Graphics
                 set { topology = value; }
             }
 
-            public IList<Vector3> Vertices
+            public List<Vector3> Vertices
             {
                 get
                 {
@@ -64,7 +64,7 @@ namespace SharpityEngine.Graphics
                 }
             }
 
-            public IList<Vector3> Normals
+            public List<Vector3> Normals
             {
                 get
                 {
@@ -73,7 +73,7 @@ namespace SharpityEngine.Graphics
                 }
             }
 
-            public IList<Vector2> UVs_0
+            public List<Vector2> UVs_0
             {
                 get
                 {
@@ -82,7 +82,7 @@ namespace SharpityEngine.Graphics
                 }
             }
 
-            public IList<Vector2> UVs_1
+            public List<Vector2> UVs_1
             {
                 get
                 {
@@ -91,7 +91,7 @@ namespace SharpityEngine.Graphics
                 }
             }
 
-            public IList <Color> Colors
+            public List <Color> Colors
             {
                 get
                 {
@@ -131,6 +131,12 @@ namespace SharpityEngine.Graphics
         public IReadOnlyList<SubMesh> SubMeshes
         {
             get { return subMeshes; }
+        }
+
+        // Constructor
+        public Mesh(string name = null)
+            : base(name)
+        {
         }
 
         // Methods
@@ -358,7 +364,7 @@ namespace SharpityEngine.Graphics
             }
 
             // Create buffer
-            subMesh.VertexBuffer = Game.GraphicsDevice.CreateBuffer(vertices, BufferUsage.Vertex);
+            subMesh.VertexBuffer = Game.GraphicsDevice.CreateBuffer(vertices, BufferUsage.Vertex, Name + " Vertex Buffer");
         }
 
         private static Bounds CalculateBounds(List<Vector3> vertices)

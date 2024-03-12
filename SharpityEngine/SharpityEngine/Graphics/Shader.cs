@@ -52,7 +52,7 @@ namespace SharpityEngine.Graphics
 
         // Private
         [DataMember(Name = "Topology")]
-        private PrimitiveTopology topology = PrimitiveTopology.TriangleStrip;
+        private PrimitiveTopology topology = PrimitiveTopology.TriangleList;
         [DataMember(Name = "FrontFace")]
         private FrontFace frontFace = FrontFace.CCW;
         [DataMember(Name = "CullMode")]
@@ -112,13 +112,14 @@ namespace SharpityEngine.Graphics
         }
 
         // Constructor
-        internal Shader(Wgpu.DeviceImpl wgpuDevice)
+        internal Shader(Wgpu.DeviceImpl wgpuDevice, string name = null)
+            : base(name)
         {
             this.wgpuDevice = wgpuDevice;
         }
 
-        internal Shader(Wgpu.DeviceImpl wgpuDevice, Wgpu.ShaderModuleImpl wgpuShader, string shaderSource)
-            : base(shaderSource)
+        internal Shader(Wgpu.DeviceImpl wgpuDevice, Wgpu.ShaderModuleImpl wgpuShader, string shaderSource, string name = null)
+            : base(shaderSource, name)
         {
             this.wgpuDevice = wgpuDevice;
             this.wgpuShader = wgpuShader;
@@ -171,14 +172,19 @@ namespace SharpityEngine.Graphics
                 fragmentState.ColorTargets[i].Format = surfaceFormat;
 
             // Create bind group layout
-            bindGroupLayout = Game.GraphicsDevice.CreateBindGroupLayout(bindingLayoutData);
+            bindGroupLayout = Game.GraphicsDevice.CreateBindGroupLayout(bindingLayoutData, Name + " Binding Group Layout");
 
             // Create pipeline layout
-            renderPipelineLayout = Game.GraphicsDevice.CreateRenderPipelineLayout(bindGroupLayout);
+            renderPipelineLayout = Game.GraphicsDevice.CreateRenderPipelineLayout(new[] { bindGroupLayout }, Name + " Render Pipeline Layout");
 
             // Create render pipeline
-            renderPipeline = Game.GraphicsDevice.CreateRenderPipeline(renderPipelineLayout, this, new RenderPipelineState(
-                vertexState, fragmentState, new PrimitiveState(topology, IndexFormat.Undefined, frontFace, cullMode), multisampleState, depthStencilState));
+            renderPipeline = Game.GraphicsDevice.CreateRenderPipeline(renderPipelineLayout, this, 
+                vertexState,
+                new PrimitiveState(topology, IndexFormat.Undefined, frontFace, cullMode), 
+                multisampleState,
+                fragmentState, 
+                depthStencilState,
+                Name + " Render Pipeline");
         }
     }
 }

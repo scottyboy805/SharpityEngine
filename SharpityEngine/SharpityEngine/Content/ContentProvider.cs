@@ -173,7 +173,7 @@ namespace SharpityEngine.Content
             // Check for valid stream
             if (readerInfo.stream == null)
             {
-                Debug.LogError(LogFilter.Content, "Could not load content: " + contentPathOrGuid);
+                Debug.LogError(LogFilter.Content, "Could not find content: " + contentPathOrGuid);
                 return null;
             }
 
@@ -194,6 +194,8 @@ namespace SharpityEngine.Content
                     result.ContentPath = contentPathOrGuid;
                     result.ContentBundle = readerInfo.context.ContainingBundle;
                 }
+                else
+                    Debug.LogError(LogFilter.Content, "Could not load content: " + contentPathOrGuid);
 
                 // Run load events
                 if (result is IContentCallback)
@@ -227,7 +229,7 @@ namespace SharpityEngine.Content
             // Check for valid stream
             if (readerInfo.stream == null)
             {
-                Debug.LogError(LogFilter.Content, "Could not load content: " + contentPathOrGuid);
+                Debug.LogError(LogFilter.Content, "Could not find content: " + contentPathOrGuid);
                 return null;
             }
 
@@ -248,6 +250,8 @@ namespace SharpityEngine.Content
                     result.ContentPath = contentPathOrGuid;
                     result.ContentBundle = readerInfo.context.ContainingBundle;
                 }
+                else
+                    Debug.LogError(LogFilter.Content, "Could not load content: " + contentPathOrGuid);
 
                 // Run load events
                 if (result is IContentCallback)

@@ -91,12 +91,12 @@ namespace SharpityEngine.Graphics
             }
         }
 
-        public GraphicsBuffer CreateBuffer(long size, BufferUsage usage)
+        public GraphicsBuffer CreateBuffer(long size, BufferUsage usage, string label = null)
         {
             // Create desc
             Wgpu.BufferDescriptor desc = new Wgpu.BufferDescriptor
             {
-                label = null,
+                label = label,
                 mappedAtCreation = 0u,
                 size = (ulong)size,
                 usage = (uint)usage,
@@ -113,17 +113,17 @@ namespace SharpityEngine.Graphics
             return new GraphicsBuffer(wgpuDevice, buffer, desc);
         }
 
-        public GraphicsBuffer CreateBuffer<T>(Span<T> data, BufferUsage usage) where T : unmanaged
+        public GraphicsBuffer CreateBuffer<T>(Span<T> data, BufferUsage usage, string label = null) where T : unmanaged
         {
-            return CreateBuffer<T>((ReadOnlySpan<T>)data, usage);
+            return CreateBuffer<T>((ReadOnlySpan<T>)data, usage, label);
         }
 
-        public GraphicsBuffer CreateBuffer<T>(ReadOnlySpan<T> data, BufferUsage usage) where T : unmanaged
+        public GraphicsBuffer CreateBuffer<T>(ReadOnlySpan<T> data, BufferUsage usage, string label = null) where T : unmanaged
         {
             // Create desc
             Wgpu.BufferDescriptor desc = new Wgpu.BufferDescriptor
             {
-                label = null,
+                label = label,
                 mappedAtCreation = 1u,
                 size = (ulong)data.Length * (ulong)Marshal.SizeOf<T>(),
                 usage = (uint)usage,
@@ -273,18 +273,18 @@ namespace SharpityEngine.Graphics
             return new Sampler(wgpuSampler);
         }
 
-        public Shader CreateShader()
+        public Shader CreateShader(string name = null)
         {
             // Create shader from asset
-            return new Shader(wgpuDevice);
+            return new Shader(wgpuDevice, name);
         }
 
-        public Shader CreateShader(string shaderSource)
+        public Shader CreateShaderSource(string shaderSource, string name = null)
         {
             // Create desc
             Wgpu.ShaderModuleDescriptor wgpuShaderDesc = new Wgpu.ShaderModuleDescriptor
             {
-                label = "Shader",
+                label = name,
                 nextInChain = new WgpuStructChain()
                     .AddShaderModuleWGSLDescriptor(shaderSource)
                     .GetPointer(),
@@ -298,10 +298,10 @@ namespace SharpityEngine.Graphics
                 return null;
 
             // Get result
-            return new Shader(wgpuDevice, wgpuShader, shaderSource);
+            return new Shader(wgpuDevice, wgpuShader, shaderSource, name);
         }
 
-        public unsafe BindGroupLayout CreateBindGroupLayout(params BindLayoutData[] layoutData)
+        public unsafe BindGroupLayout CreateBindGroupLayout(BindLayoutData[] layoutData, string label = null)
         {
             // Create entry
             Span<Wgpu.BindGroupLayoutEntry> wgpuEntries = stackalloc Wgpu.BindGroupLayoutEntry[layoutData.Length];
@@ -313,6 +313,7 @@ namespace SharpityEngine.Graphics
             // Create desc
             Wgpu.BindGroupLayoutDescriptor wgpuBindGroupLayoutDesc = new Wgpu.BindGroupLayoutDescriptor
             {
+                label = label,
                 entries = (IntPtr)Unsafe.AsPointer(ref MemoryMarshal.GetReference(wgpuEntries)),
                 entryCount = (uint)layoutData.Length,
             };
@@ -369,7 +370,7 @@ namespace SharpityEngine.Graphics
             return new CommandList(wgpuEncoder);
         }
 
-        public unsafe RenderPipelineLayout CreateRenderPipelineLayout(params BindGroupLayout[] bindGroupLayouts)
+        public unsafe RenderPipelineLayout CreateRenderPipelineLayout(BindGroupLayout[] bindGroupLayouts, string label = null)
         {
             // Create entry
             Span<Wgpu.BindGroupLayoutImpl> wgpuBindGroupLayouts = stackalloc Wgpu.BindGroupLayoutImpl[bindGroupLayouts.Length];
@@ -381,6 +382,7 @@ namespace SharpityEngine.Graphics
             // Create desc
             Wgpu.PipelineLayoutDescriptor wgpuPipelineLayoutDesc = new Wgpu.PipelineLayoutDescriptor
             {
+                label = label,
                 bindGroupLayouts = new IntPtr(Unsafe.AsPointer(ref wgpuBindGroupLayouts.GetPinnableReference())),
                 bindGroupLayoutCount = (uint)bindGroupLayouts.Length,
             };
@@ -396,20 +398,8 @@ namespace SharpityEngine.Graphics
             return new RenderPipelineLayout(wgpuPipelineLayout);
         }
 
-        public unsafe RenderPipeline CreateRenderPipeline(RenderPipelineLayout layout, Shader shader, in RenderPipelineState state)
+        public unsafe RenderPipeline CreateRenderPipeline(RenderPipelineLayout layout, Shader shader, in VertexState vertexState, in PrimitiveState primitiveState, in MultisampleState multisampleState, FragmentState? fragmentState = null, DepthStencilState? depthStencilState = null, string label = null)
         {
-            //IntPtr fragmentStatePtr = IntPtr.Zero, depthStencilPtr = IntPtr.Zero;
-
-            //// Get fragment state
-            //if (state.FragmentState != null)
-            //    fragmentStatePtr = AllocStructPtr(state.FragmentState.Value
-            //        .GetFragmentState(shader));
-
-            //// Get depth state
-            //if (state.DepthStencilState != null)
-            //    depthStencilPtr = AllocStructPtr(state.DepthStencilState.Value
-            //        .GetDepthStencilState());
-
             // Create desc
             Wgpu.RenderPipelineDescriptor wgpuRenderPipelineDesc = new Wgpu.RenderPipelineDescriptor
             {
@@ -417,42 +407,42 @@ namespace SharpityEngine.Graphics
                 vertex = new Wgpu.VertexState
                 {
                     module = shader.wgpuShader,
-                    entryPoint = state.VertexState.EntryPoint,
-                    buffers = AllocStructEnumerablePtr(state.VertexState.BufferLayouts.Select(b => new Wgpu.VertexBufferLayout
+                    entryPoint = vertexState.EntryPoint,
+                    buffers = AllocStructEnumerablePtr(vertexState.BufferLayouts.Select(b => new Wgpu.VertexBufferLayout
                     {
                         arrayStride = (ulong)b.ArrayStride,
                         stepMode = (Wgpu.VertexStepMode)b.StepMode,
                         attributes = AllocStructArrayPtr(b.Attributes),
                         attributeCount = (uint)b.Attributes.Length,
-                    }), state.VertexState.BufferLayouts.Length),
-                    bufferCount = (uint)state.VertexState.BufferLayouts.Length,
+                    }), vertexState.BufferLayouts.Length),
+                    bufferCount = (uint)vertexState.BufferLayouts.Length,
                 },
                 primitive = new Wgpu.PrimitiveState
                 {
-                    topology = (Wgpu.PrimitiveTopology)state.PrimitiveState.Topology,
-                    stripIndexFormat = (Wgpu.IndexFormat)state.PrimitiveState.StripIndexFormat,
-                    frontFace = (Wgpu.FrontFace)state.PrimitiveState.FrontFace,
-                    cullMode = (Wgpu.CullMode)state.PrimitiveState.CullMode,
+                    topology = (Wgpu.PrimitiveTopology)primitiveState.Topology,
+                    stripIndexFormat = (Wgpu.IndexFormat)primitiveState.StripIndexFormat,
+                    frontFace = (Wgpu.FrontFace)primitiveState.FrontFace,
+                    cullMode = (Wgpu.CullMode)primitiveState.CullMode,
                 },
                 multisample = new Wgpu.MultisampleState
                 {
-                    count = (uint)state.MultisampleState.Count,
-                    mask = state.MultisampleState.Mask,
-                    alphaToCoverageEnabled = state.MultisampleState.AlphaToCoverageEnabled ? 1u : 0u,
+                    count = (uint)multisampleState.Count,
+                    mask = multisampleState.Mask,
+                    alphaToCoverageEnabled = multisampleState.AlphaToCoverageEnabled ? 1u : 0u,
                 },
-                fragment = state.FragmentState != null ? AllocStructPtr(new Wgpu.FragmentState
+                fragment = fragmentState != null ? AllocStructPtr(new Wgpu.FragmentState
                 {
                     module = shader.wgpuShader,
-                    entryPoint = state.FragmentState.Value.EntryPoint,
-                    targets = AllocStructEnumerablePtr(state.FragmentState.Value.ColorTargets.Select(c => new Wgpu.ColorTargetState
+                    entryPoint = fragmentState.Value.EntryPoint,
+                    targets = AllocStructEnumerablePtr(fragmentState.Value.ColorTargets.Select(c => new Wgpu.ColorTargetState
                     {
                         format = (Wgpu.TextureFormat)c.Format,
                         blend = c.BlendState != null ? AllocStructPtr(c.BlendState.Value) : IntPtr.Zero,
                         writeMask = (uint)c.WriteMask,
-                    }), state.FragmentState.Value.ColorTargets.Length),
-                    targetCount = (uint)state.FragmentState.Value.ColorTargets.Length,
+                    }), fragmentState.Value.ColorTargets.Length),
+                    targetCount = (uint)fragmentState.Value.ColorTargets.Length,
                 }) : IntPtr.Zero,
-                depthStencil = state.DepthStencilState != null ? AllocStructPtr(state.DepthStencilState.Value) : IntPtr.Zero,
+                depthStencil = depthStencilState != null ? AllocStructPtr(depthStencilState.Value) : IntPtr.Zero,
             };
 
             // Create pipeline

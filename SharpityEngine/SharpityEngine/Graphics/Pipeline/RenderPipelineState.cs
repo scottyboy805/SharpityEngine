@@ -123,32 +123,4 @@ namespace SharpityEngine.Graphics.Pipeline
             };
         }
     }
-
-    public struct RenderPipelineState
-    {
-        // Public
-        public VertexState VertexState;
-        public PrimitiveState PrimitiveState;
-        public MultisampleState MultisampleState;
-        public FragmentState? FragmentState;
-        public DepthStencilState? DepthStencilState;
-
-        // Constructor
-        public RenderPipelineState(in VertexState vertexState, in PrimitiveState primitiveState, MultisampleState multisampleState, DepthStencilState? depthStencilState = null)
-        {
-            this.VertexState = vertexState;
-            this.PrimitiveState = primitiveState;
-            this.MultisampleState = multisampleState;
-            this.DepthStencilState = depthStencilState;
-        }
-
-        public RenderPipelineState(in VertexState vertexState, in FragmentState fragmentState, in PrimitiveState primitiveState, MultisampleState multisampleState, DepthStencilState? depthStencilState = null)
-        {
-            this.VertexState = vertexState;
-            this.PrimitiveState = primitiveState;
-            this.FragmentState = fragmentState;
-            this.MultisampleState = multisampleState;
-            this.DepthStencilState = depthStencilState;
-        }
-    }
 }

@@ -26,14 +26,19 @@ namespace SharpityEngine
         }
 
         // Constructor
-        internal DataAsset() { }
+        internal DataAsset(string name = null)
+            : base(name)
+        {
+        }
 
-        protected internal DataAsset(byte[] byteData)
+        protected internal DataAsset(byte[] byteData, string name = null)
+            : base(name)
         {
             this.dataBytes = byteData;
         }
 
-        protected internal DataAsset(string textData)
+        protected internal DataAsset(string textData, string name = null)
+            : base(name)
         {
             this.dataBytes = Encoding.UTF8.GetBytes(textData);
         }

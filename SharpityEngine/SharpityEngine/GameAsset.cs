@@ -7,7 +7,8 @@ namespace SharpityEngine
         private bool loadedCallback = false;
 
         // Constructor
-        protected GameAsset()
+        protected GameAsset(string name = null)
+            : base(name)
         {
         }
 

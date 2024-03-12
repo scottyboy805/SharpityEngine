@@ -87,11 +87,15 @@ namespace SharpityEngine_SDL
             // Load texture content
             Texture texture = content.Load<Texture>("Resources/WGPU-Logo.png");
 
+            // Load mesh content
+            Mesh cubeMesh = content.Load<Mesh>("Resources/Cube.fbx");
+            vertexBuffer = cubeMesh.SubMeshes[0].VertexBuffer;
+
             // Sampler
             Sampler sampler = device.CreateSampler(WrapMode.ClampToEdge, FilterMode.Linear);
 
             // Shader
-            Shader shader = device.CreateShader(File.ReadAllText("shader.wgsl"));
+            Shader shader = device.CreateShaderSource(File.ReadAllText("shader.wgsl"));
 
             // Material
             Material material = new Material(shader);
@@ -162,7 +166,7 @@ namespace SharpityEngine_SDL
                     Matrix4x4.CreateScale(
                         (float)(1 + 0.1 * Math.Sin(duration.TotalSeconds * 2.0))
                     ) *
-                    Matrix4x4.CreateTranslation(0, 0, -3)
+                    Matrix4x4.CreateTranslation(0, 0, -5)
                     ;
 
                 uniformBufferData.Transform *=
@@ -187,8 +191,8 @@ namespace SharpityEngine_SDL
                 renderPass.SetPipeline(material.Shader.renderPipeline);
 
                 renderPass.SetBindGroup(material.bindGroup, 0);
-                renderPass.SetVertexBuffer(vertexBuffer, 0, 0, (subMesh.Vertices.Count * sizeof(Vertex)));
-                renderPass.Draw(3, 1, 0, 0);
+                renderPass.SetVertexBuffer(vertexBuffer, 0, 0, (cubeMesh.SubMeshes[0].Vertices.Count * sizeof(Vertex)));
+                renderPass.Draw(cubeMesh.SubMeshes[0].Vertices.Count, 1, 0, 0);
                 renderPass.End();
 
                 nextTexture.Dispose();
