@@ -1,5 +1,4 @@
 ﻿using SharpityEngine.Graphics;
-using System.ComponentModel;
 using System.Runtime.Serialization;
 
 namespace SharpityEngine.Scene
@@ -8,6 +7,7 @@ namespace SharpityEngine.Scene
     {
         // Internal
         internal HashSet<IGameDraw> sceneDrawCalls = new HashSet<IGameDraw>();
+        internal HashSet<IGameUpdate> sceneUpdateCalls = new HashSet<IGameUpdate>();
 
         // Private
         [DataMember(Name = "Enabled")]
@@ -70,17 +70,103 @@ namespace SharpityEngine.Scene
         {
             GameObject go = new GameObject(name);
 
+            // Initialize the game object
+            CreateObject(go);
+            return go;
+        }
+
+        public GameObject CreatePrimitiveObject(GameObjectPrimitive primitive, string name = null)
+        {
+            GameObject go = new GameObject(name);
+
+            // Add components
+
+            // Initialize the game object
+            CreateObject(go);
+            return go;
+        }
+
+        public GameObject CreateObject(Type[] componentTypes, string name = null)
+        {
+            // Check for null
+            if(componentTypes == null)
+                throw new ArgumentNullException(nameof(componentTypes));
+
+            GameObject go = new GameObject(name);
+
+            // Initialize the game object
+            CreateObject(go);
+
+            // Add components
+            foreach(Type componentType in componentTypes)
+            {
+                go.CreateComponent(componentType);
+            }
+            return go;
+        }
+
+        public Component CreateObject(Type mainComponentType, Type[] additionalComponentTypes = null, string name = null)
+        {
+            // Check for null
+            if(mainComponentType == null)
+                throw new ArgumentNullException(nameof(mainComponentType));
+
+            // Create object
+            GameObject go = new GameObject(name);
+
+            // Initialize the game object
+            CreateObject(go);
+
+            // Add component
+            Component result = go.CreateComponent(mainComponentType);
+
+            // Add additional components
+            if(additionalComponentTypes != null && additionalComponentTypes.Length > 0)
+            {
+                foreach(Type componentType in additionalComponentTypes)
+                {
+                    go.CreateComponent(componentType);
+                }
+            }
+
+            return result;
+        }
+
+        public T CreateObject<T>(Type[] additionalComponentTypes = null, string name = null) where T : Component
+        {
+            // Create object
+            GameObject go = new GameObject(name);
+
+            // Initialize the game object
+            CreateObject(go);
+
+            // Add component
+            T result = go.CreateComponent<T>();
+
+            // Add additional components
+            if (additionalComponentTypes != null && additionalComponentTypes.Length > 0)
+            {
+                foreach (Type componentType in additionalComponentTypes)
+                {
+                    go.CreateComponent(componentType);
+                }
+            }
+
+            return result;
+        }
+
+        private void CreateObject(GameObject go)
+        {
             // Register object
             gameObjects.Add(go);
             go.scene = this;
 
+            // Initialize transform
+            go.Transform = new Transform(go);
+
             // Trigger enable
             GameObject.DoGameObjectEnabledEvents(go, true, true);
-
-            return go;
         }
-
-
         #endregion
     }
 }

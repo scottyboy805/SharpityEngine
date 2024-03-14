@@ -3,11 +3,8 @@ using System.Runtime.Serialization;
 
 namespace SharpityEngine.Scene
 {
-    public abstract class Renderer : Component, IGameDraw, IGameEnable
+    public abstract class Renderer : Component, IGameDraw
     {
-        // Private
-        private static Material errorMaterial = null;
-
         // Protected
         [DataMember(Name = "DrawOrder")]
         protected int drawOrder = 0;
@@ -42,33 +39,10 @@ namespace SharpityEngine.Scene
             set { materials = value != null ? value : new Material[0]; }
         }
 
-        internal Material ErrorMaterial
-        {
-            get
-            {
-                if (errorMaterial == null)
-                    errorMaterial = Game.Content.Load<Material>("Error.wgsl");
-
-                return errorMaterial;
-            }
-        }
-
         // Methods
         public virtual void OnAfterDraw() { }
 
         public virtual void OnBeforeDraw() { }
-
-        public virtual void OnEnable()
-        {
-            // Submit renderer
-            Scene.sceneDrawCalls.Add(this);
-        }
-
-        public virtual void OnDisable()
-        {
-            // Remove renderer
-            Scene.sceneDrawCalls.Remove(this);
-        }
 
         public abstract void OnDraw(BatchRenderer batchRenderer);
     }

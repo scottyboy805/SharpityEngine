@@ -1,5 +1,4 @@
-﻿using System.Reflection.Metadata.Ecma335;
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
 
 namespace SharpityEngine
 {
@@ -14,14 +13,20 @@ namespace SharpityEngine
         private Vector3 localScale = Vector3.One;
 
         // Internal
+        internal Matrix4 worldMatrix = Matrix4.Identity;        
         internal Transform parent = null;
+        internal Transform root = null;
         internal List<Transform> children = null;
 
-        // Properties
-        
+        // Properties        
         public Transform Parent
         {
             get { return parent; }
+        }
+
+        public Transform Root
+        {
+            get { return root; }
         }
 
         public bool IsRoot
@@ -94,12 +99,60 @@ namespace SharpityEngine
         public Vector3 WorldPosition
         {
             get;
+            set;
+        }
+
+        public Quaternion WorldRotation
+        {
+            get;
+            set;
+        }
+
+        public Vector3 Forward
+        {
+            get { return WorldRotation * Vector3.Forward; }
+            //set { WorldRotation = Quaternion.LookRotation(value); }
+        }
+
+        // Constructor
+        private Transform() { }
+
+        internal Transform(GameObject go)
+        {
+            this.gameObject = go;
         }
 
         // Methods
         private void RebuildTransform()
         {
+            // Check for static
+            if (GameObject.IsStatic == true)
+                return;
 
+            // Translation
+            Matrix4 translate = Matrix4.Translate(localPosition);
+
+            // Rotation
+            Matrix4 rotationX = Matrix4.RotationX(localRotation.EulerAngles.X);
+            Matrix4 rotationY = Matrix4.RotationY(localRotation.EulerAngles.Y);
+            Matrix4 rotationZ = Matrix4.RotationZ(localRotation.EulerAngles.Z);
+
+            // Scale
+            Matrix4 scale = Matrix4.Scale(localScale);
+
+            // Create TRS
+            worldMatrix = translate * (rotationX * rotationY * rotationZ) * scale;
+
+            // Check for parent
+            if (parent != null)
+                worldMatrix = parent.worldMatrix * worldMatrix;
+
+            // Rebuild children
+            if(children != null && children.Count > 0)
+            {
+                for (int i = 0; i < children.Count; i++)
+                    children[i].RebuildTransform();
+            }
         }
     }
 }

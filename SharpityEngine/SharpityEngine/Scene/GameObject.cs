@@ -1,8 +1,19 @@
 ﻿using SharpityEngine.Scene;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 
 namespace SharpityEngine
 {
+    public enum GameObjectPrimitive
+    {
+        Cube,
+        Sphere,
+        Cylinder,
+        Quad,
+        Triangle,
+    }
+
     public sealed class GameObject : GameElement
     {
         // Private
@@ -83,6 +94,7 @@ namespace SharpityEngine
         public Transform Transform
         {
             get { return transform; }
+            internal set { transform = value; }
         }
 
         public GameScene Scene
@@ -91,12 +103,10 @@ namespace SharpityEngine
         }
 
         // Constructor
-        internal GameObject() { }
-        internal GameObject(string name)
+        internal GameObject(string name = null)
             : base(name)
         {
-            // Create transform
-            this.transform = new Transform();
+            
         }
 
         // Methods
@@ -107,25 +117,56 @@ namespace SharpityEngine
         }
 
         #region CreateComponent
+        public Component CreateComponent(Type componentType)
+        {
+            // Check type
+            if (typeof(Component).IsAssignableFrom(componentType) == false)
+                throw new ArgumentException("Component type must derive from SharpityEngine.Component");
+
+            // Create type instance
+            Component component = TypeManager.CreateTypeInstanceAs<Component>(componentType);
+
+            // Check for error
+            if (component == null)
+                throw new TypeInitializationException("Could not create instance of component: " + componentType, null);
+
+            // Initialize component
+            CreateComponent(component);
+            return component;
+        }
+
         public T CreateComponent<T>() where T : Component
         {
             // Create type instance
             T component = TypeManager.CreateTypeInstanceAs<T>(typeof(T));
 
-            // Register component
-            if (components == null) components = new List<Component>();
-            components.Add(component);
-            component.gameObject = this;
+            // Check for error
+            if (component == null)
+                throw new TypeInitializationException("Could not create instance of component: " + typeof(T), null);
 
-            // Trigger enable
-            Component.DoComponentEnabledEvents(component, true, true);
-
+            // Initialize component
+            CreateComponent(component);
             return component;
         }
+
+        public void CreateComponent(Component existingComponent)
+        {
+            // Check for null
+            if (existingComponent == null)
+                throw new ArgumentNullException(nameof(existingComponent));
+
+            // Register component
+            if (components == null) components = new List<Component>();
+            components.Add(existingComponent);
+            existingComponent.gameObject = this;
+
+            // Trigger enable
+            Component.DoComponentEnabledEvents(existingComponent, true, true);
+        }            
         #endregion
 
         #region GetComponent
-        public Component GetComponent(Type type, bool includeDisabled = false, string tag = null)
+        public Component GetComponent(Type type, bool includeDisabled = false)
         {
             // Get transform
             if (type == typeof(Transform))
@@ -136,14 +177,14 @@ namespace SharpityEngine
             {
                 foreach (Component component in components)
                 {
-                    if (type.IsAssignableFrom(component.elementType) == true && CheckComponent(component, includeDisabled, tag) == true)
+                    if (type.IsAssignableFrom(component.elementType) == true && CheckComponent(component, includeDisabled) == true)
                         return component;
                 }
             }
             return null;
         }
 
-        public T GetComponent<T>(bool includeDisabled = false, string tag = null) where T : class
+        public T GetComponent<T>(bool includeDisabled = false) where T : class
         {
             // Get transform
             if (typeof(T) == typeof(Transform))
@@ -154,14 +195,14 @@ namespace SharpityEngine
             {
                 foreach(Component component in components)
                 {
-                    if (component is T match && CheckComponent(component, includeDisabled, tag) == true)
+                    if (component is T match && CheckComponent(component, includeDisabled) == true)
                         return match;
                 }
             }
             return null;
         }
 
-        public T[] GetComponents<T>(bool includeDisabled = false, string tag = null) where T : class
+        public T[] GetComponents<T>(bool includeDisabled = false) where T : class
         {
             // Get transform
             if (typeof(T) == typeof(Transform))
@@ -173,12 +214,12 @@ namespace SharpityEngine
 
             // Get components
             return components
-                .Where(c => CheckComponent(c, includeDisabled, tag) == true)
+                .Where(c => CheckComponent(c, includeDisabled) == true)
                 .OfType<T>()                
                 .ToArray();
         }
 
-        public int GetComponents<T>(IList<T> results, bool includeDisabled = false, string tag = null) where T : class
+        public int GetComponents<T>(IList<T> results, bool includeDisabled = false) where T : class
         {
             // Get transform
             if (typeof(T) == typeof(Transform))
@@ -195,7 +236,7 @@ namespace SharpityEngine
             {
                 foreach (Component component in components)
                 {
-                    if (component is T match && CheckComponent(component, includeDisabled, tag) == true)
+                    if (component is T match && CheckComponent(component, includeDisabled) == true)
                     {
                         results.Add(match);
                         count++;
@@ -443,6 +484,13 @@ namespace SharpityEngine
         }
         #endregion
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool CheckComponent(Component component, bool includeDisabled)
+        {
+            return (includeDisabled == true || component.Enabled == true);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool CheckComponent(Component component, bool includeDisabled, string tag)
         {
             return (includeDisabled == true || component.Enabled == true)
@@ -466,17 +514,13 @@ namespace SharpityEngine
             // Update components
             if (gameObject.components != null && gameObject.components.Count > 0)
             {
+                // Update all components
                 foreach (Component component in gameObject.components)
                 {
-                    if (component.Enabled == true && component is IGameEnable)
+                    if (component.Enabled == true)
                     {
-                        // Trigger event
-                        try
-                        {
-                            if (enabled == true) ((IGameEnable)component).OnEnable();
-                            else ((IGameEnable)component).OnDisable();
-                        }
-                        catch (Exception e) { Debug.LogException(e); }
+                        // Trigger component enabled callback
+                        Component.OnComponentEnabledEvent(component, enabled);
                     }
                 }
             }
