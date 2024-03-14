@@ -41,6 +41,15 @@ namespace SharpityEngine.Graphics
                 IntPtr.Zero);
         }
 
+        public unsafe void Submit(CommandBuffer command)
+        {
+            // Get command struct
+            Wgpu.CommandBufferImpl* cmd = &command.wgpuCommandBuffer;
+
+            // Submit queue
+            Wgpu.QueueSubmit(wgpuQueue, 1U, ref *cmd);
+        }
+
         public unsafe void Submit(CommandBuffer[] commands)
         {
             // Get start of array

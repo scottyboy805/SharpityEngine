@@ -49,6 +49,103 @@ namespace SharpityEngine.Graphics.Pipeline
             }
         }
 
+        public unsafe RenderCommandList BeginRenderPass(ColorAttachment colorAttachment)
+        {
+            // Create attachments
+            Span<Wgpu.RenderPassColorAttachment> wgpuColors = stackalloc Wgpu.RenderPassColorAttachment[1];
+
+            // Create color entries
+            wgpuColors[0] = new Wgpu.RenderPassColorAttachment
+            {
+                view = colorAttachment.View.wgpuTextureView,
+                resolveTarget = colorAttachment.ResolveTarget?.wgpuTextureView ?? default,
+                loadOp = (Wgpu.LoadOp)colorAttachment.LoadOp,
+                storeOp = (Wgpu.StoreOp)colorAttachment.StoreOp,
+                clearValue = new Wgpu.Color
+                {
+                    r = colorAttachment.ClearColor.R,
+                    g = colorAttachment.ClearColor.G,
+                    b = colorAttachment.ClearColor.B,
+                    a = colorAttachment.ClearColor.A,
+                },
+            };
+
+            // Create desc
+            Wgpu.RenderPassDescriptor wgpuRenderPassDesc = new Wgpu.RenderPassDescriptor
+            {
+                label = "Render Pass",
+                colorAttachments = new IntPtr(Unsafe.AsPointer(ref wgpuColors.GetPinnableReference())),
+                colorAttachmentCount = 1U,
+                depthStencilAttachment = IntPtr.Zero,
+            };
+
+            // Start render pass
+            Wgpu.RenderPassEncoderImpl wgpuRenderEncoder = Wgpu.CommandEncoderBeginRenderPass(wgpuEncoder, wgpuRenderPassDesc);
+
+            // Check for error
+            if (wgpuRenderEncoder.Handle == IntPtr.Zero)
+                return null;
+
+            // Create render command list
+            return new RenderCommandList(wgpuRenderEncoder);
+        }
+
+        public unsafe RenderCommandList BeginRenderPass(ColorAttachment colorAttachment, in DepthStencilAttachment depthStencilAttachment)
+        {
+            // Create attachments
+            Span<Wgpu.RenderPassColorAttachment> wgpuColors = stackalloc Wgpu.RenderPassColorAttachment[1];
+
+            // Create color entries
+            wgpuColors[0] = new Wgpu.RenderPassColorAttachment
+            {
+                view = colorAttachment.View.wgpuTextureView,
+                resolveTarget = colorAttachment.ResolveTarget?.wgpuTextureView ?? default,
+                loadOp = (Wgpu.LoadOp)colorAttachment.LoadOp,
+                storeOp = (Wgpu.StoreOp)colorAttachment.StoreOp,
+                clearValue = new Wgpu.Color
+                {
+                    r = colorAttachment.ClearColor.R,
+                    g = colorAttachment.ClearColor.G,
+                    b = colorAttachment.ClearColor.B,
+                    a = colorAttachment.ClearColor.A,
+                },
+            };
+
+            // Create depth stencil
+            Wgpu.RenderPassDepthStencilAttachment wgpuDepthStencil = new Wgpu.RenderPassDepthStencilAttachment
+            {
+                view = depthStencilAttachment.View.wgpuTextureView,
+                depthLoadOp = (Wgpu.LoadOp)depthStencilAttachment.DepthLoadOp,
+                depthStoreOp = (Wgpu.StoreOp)depthStencilAttachment.DepthStoreOp,
+                depthClearValue = depthStencilAttachment.DepthClearValue,
+                depthReadOnly = depthStencilAttachment.DepthReadOnly ? 1u : 0u,
+                stencilLoadOp = (Wgpu.LoadOp)depthStencilAttachment.StencilLoadOp,
+                stencilStoreOp = (Wgpu.StoreOp)depthStencilAttachment.StencilStoreOp,
+                stencilClearValue = depthStencilAttachment.StencilClearValue,
+                stencilReadOnly = depthStencilAttachment.StencilReadOnly ? 1u : 0u,
+            };
+
+            // Create desc
+            Wgpu.RenderPassDescriptor wgpuRenderPassDesc = new Wgpu.RenderPassDescriptor
+            {
+                label = "Render Pass",
+                colorAttachments = new IntPtr(Unsafe.AsPointer(ref wgpuColors.GetPinnableReference())),
+                colorAttachmentCount = 1U,
+                depthStencilAttachment = new IntPtr(&wgpuDepthStencil),
+            };
+
+            // Start render pass
+            Wgpu.RenderPassEncoderImpl wgpuRenderEncoder = Wgpu.CommandEncoderBeginRenderPass(wgpuEncoder, wgpuRenderPassDesc);
+
+            // Check for error
+            if (wgpuRenderEncoder.Handle == IntPtr.Zero)
+                return null;
+
+            // Create render command list
+            return new RenderCommandList(wgpuRenderEncoder);
+
+        }
+
         public unsafe RenderCommandList BeginRenderPass(ColorAttachment[] colorAttachments)
         {
             // Create attachments
@@ -148,9 +245,7 @@ namespace SharpityEngine.Graphics.Pipeline
                 return null;
 
             // Create render command list
-            return new RenderCommandList(wgpuRenderEncoder);
-
-        }
+            return new RenderCommandList(wgpuRenderEncoder);        }
 
         public void ClearBuffer(GraphicsBuffer buffer, long offset, long size) 
         {

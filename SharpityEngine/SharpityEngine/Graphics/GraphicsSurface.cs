@@ -40,6 +40,17 @@ namespace SharpityEngine.Graphics
         // Private
         private IGraphicsContext context = null;
 
+        // Properties
+        public int RenderWidth
+        {
+            get { return context?.RenderWidth ?? 0; }
+        }
+
+        public int RenderHeight
+        {
+            get { return context?.RenderHeight ?? 0; }
+        }
+
         // Constructor
         private GraphicsSurface(Wgpu.InstanceImpl wgpuInstance, Wgpu.SurfaceImpl wgpuSurface, IGraphicsContext context)
         {

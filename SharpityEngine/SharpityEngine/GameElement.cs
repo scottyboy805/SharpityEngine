@@ -152,7 +152,7 @@ namespace SharpityEngine
 
             // Get name
             if(name == null)
-                name = elementType.Name;
+                this.name = elementType.Name;
         }
 
         // Methods

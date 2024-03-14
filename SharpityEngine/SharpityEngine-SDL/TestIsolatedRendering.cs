@@ -8,6 +8,10 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SharpityEngine.Content;
 using Vector3 = SharpityEngine.Vector3;
+using SharpityEngine;
+using SharpityEngine.Scene;
+using Vector4 = SharpityEngine.Vector4;
+using Vector2 = SharpityEngine.Vector2;
 
 namespace SharpityEngine_SDL
 {
@@ -62,8 +66,9 @@ namespace SharpityEngine_SDL
             GraphicsDevice device = adapter.RequestDeviceAsync().Result;
 
 
-            SharpityEngine.Game game = new SDL2_Game(new SharpityEngine.TypeManager(), new SDL2_GamePlatform(), null, surface, adapter, device);
             FileContentProvider content = new FileContentProvider(Environment.CurrentDirectory);
+            SharpityEngine.Game game = new SDL2_Game(new SharpityEngine.TypeManager(), new SDL2_GamePlatform(content), null, surface, adapter, device);
+            
 
 
             // Create mesh triangle
@@ -119,6 +124,22 @@ namespace SharpityEngine_SDL
 
 
             Span<UniformBuffer> uniformBufferSpan = stackalloc UniformBuffer[1];
+
+
+
+
+            // ECS
+            GameScene gameScene = new GameScene();
+            Game.Current.GameModules.AddModule(gameScene);
+
+            GameObject gameObject = gameScene.CreateEmptyObject("Cube");
+            MeshRenderer meshRenderer = gameObject.CreateComponent<MeshRenderer>();
+            meshRenderer.Mesh = cubeMesh;
+            meshRenderer.Material = material;
+
+            GameObject cameraObject = gameScene.CreateEmptyObject("Camera");
+            Camera camera = cameraObject.CreateComponent<Camera>();
+
 
             var startTime = DateTime.Now;
 
@@ -182,20 +203,25 @@ namespace SharpityEngine_SDL
                 }
 
                 CommandList commandList = device.CreateCommandList();
-                RenderCommandList renderPass = commandList.BeginRenderPass(new ColorAttachment[]
-                {
-                    new ColorAttachment(nextTexture, new SharpityEngine.Color(0f, 0.02f, 0.1f, 1f))
-                }, new DepthStencilAttachment(depthTextureView));
 
 
-                renderPass.SetPipeline(material.Shader.renderPipeline);
+                camera.Render(nextTexture, commandList);
 
-                renderPass.SetBindGroup(material.bindGroup, 0);
-                renderPass.SetVertexBuffer(vertexBuffer, 0, 0, (cubeMesh.SubMeshes[0].Vertices.Count * sizeof(Vertex)));
-                renderPass.Draw(cubeMesh.SubMeshes[0].Vertices.Count, 1, 0, 0);
-                renderPass.End();
 
-                nextTexture.Dispose();
+                //RenderCommandList renderPass = commandList.BeginRenderPass(new ColorAttachment[]
+                //{
+                //    new ColorAttachment(nextTexture, new SharpityEngine.Color(0f, 0.02f, 0.1f, 1f))
+                //}, new DepthStencilAttachment(depthTextureView));
+
+
+                //renderPass.SetPipeline(material.Shader.renderPipeline);
+
+                //renderPass.SetBindGroup(material.bindGroup, 0);
+                //renderPass.SetVertexBuffer(vertexBuffer, 0, 0, (cubeMesh.SubMeshes[0].Vertices.Count * sizeof(Vertex)));
+                //renderPass.Draw(cubeMesh.SubMeshes[0].Vertices.Count, 1, 0, 0);
+                //renderPass.End();
+
+                //nextTexture.Dispose();
 
                 var queue = device.Queue;
 

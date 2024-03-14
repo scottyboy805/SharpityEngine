@@ -19,18 +19,47 @@ namespace SharpityEngine
         [DataMember(Name = "Components")]
         private List<Component> components = null;
 
-        private GameScene scene = null;
+        // Internal
+        internal GameScene scene = null;
 
         // Properties
-        public bool EnabledSelf
+        public bool Enabled
         {
             get { return enabled; }
-            set { enabled = value; }
+            set 
+            {
+                // Trigger enable with event
+                DoGameObjectEnabledEvents(this, value);
+            }
         }
 
         public bool EnabledInHierarchy
         {
-            get { return false; }
+            get 
+            {
+                // Check simple case
+                if (scene.Enabled == false || enabled == false)
+                    return false;
+
+                GameObject current = this;
+
+                // Check for parent
+                while (current.transform.parent != null)
+                {
+                    // Check for disabled
+                    if (current.enabled == false)
+                        return false;
+
+                    // Move up the hierarchy
+                    current = current.transform.parent.GameObject;
+
+                    // Check for null
+                    if (current == null)
+                        break;
+                }
+
+                return enabled; 
+            }
         }
 
         public bool IsStatic
@@ -61,6 +90,15 @@ namespace SharpityEngine
             get { return scene; }
         }
 
+        // Constructor
+        internal GameObject() { }
+        internal GameObject(string name)
+            : base(name)
+        {
+            // Create transform
+            this.transform = new Transform();
+        }
+
         // Methods
         public override string ToString()
         {
@@ -68,6 +106,25 @@ namespace SharpityEngine
             return string.Format("{0}({1})", GetType().FullName, nameInfo);
         }
 
+        #region CreateComponent
+        public T CreateComponent<T>() where T : Component
+        {
+            // Create type instance
+            T component = TypeManager.CreateTypeInstanceAs<T>(typeof(T));
+
+            // Register component
+            if (components == null) components = new List<Component>();
+            components.Add(component);
+            component.gameObject = this;
+
+            // Trigger enable
+            Component.DoComponentEnabledEvents(component, true, true);
+
+            return component;
+        }
+        #endregion
+
+        #region GetComponent
         public Component GetComponent(Type type, bool includeDisabled = false, string tag = null)
         {
             // Get transform
@@ -206,6 +263,7 @@ namespace SharpityEngine
             // Search for components
             return BFSSearchComponentsParent<T>(this, isTransform, results, includeDisabled, tag);
         }
+        #endregion
 
         #region SearchComponents(T)
         private static T BFSSearchComponentChildren<T>(GameObject current, bool includeDisabled, string tag) where T : class
@@ -390,5 +448,52 @@ namespace SharpityEngine
             return (includeDisabled == true || component.Enabled == true)
                 && (tag == null || component.CompareTag(tag) == true);
         }
+
+
+        #region HierarchyEvents
+        internal static void DoGameObjectEnabledEvents(GameObject gameObject, bool enabled, bool forceUpdate = false)
+        {
+            // Store current enabled state
+            bool currentEnabledState = gameObject.enabled;
+
+            // Change enabled state
+            gameObject.enabled = enabled;
+
+            // Check for disabled in hierarchy
+            if (gameObject.scene.Enabled == false || gameObject.EnabledInHierarchy == false || (currentEnabledState == enabled && forceUpdate == false))
+                return;            
+
+            // Update components
+            if (gameObject.components != null && gameObject.components.Count > 0)
+            {
+                foreach (Component component in gameObject.components)
+                {
+                    if (component.Enabled == true && component is IGameEnable)
+                    {
+                        // Trigger event
+                        try
+                        {
+                            if (enabled == true) ((IGameEnable)component).OnEnable();
+                            else ((IGameEnable)component).OnDisable();
+                        }
+                        catch (Exception e) { Debug.LogException(e); }
+                    }
+                }
+            }
+
+            // Get transform
+            Transform transform = gameObject.transform;
+
+            // Update children recursive
+            if(transform.children != null && transform.children.Count > 0)
+            {
+                foreach(Transform child in transform.children)
+                {
+                    // Recursive call
+                    DoGameObjectEnabledEvents(child.GameObject, enabled);
+                }
+            }
+        }
+        #endregion
     }
 }

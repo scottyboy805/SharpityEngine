@@ -1,4 +1,6 @@
-﻿using SharpityEngine.Graphics;
+﻿using SharpityEngine.Content;
+using SharpityEngine.Graphics;
+using SharpityEngine.Graphics.Pipeline;
 using System.Diagnostics;
 
 namespace SharpityEngine
@@ -17,6 +19,7 @@ namespace SharpityEngine
         private GraphicsDevice graphicsDevice = null;
         private GameModules gameModules = null;
 
+        private BatchRenderer batchRenderer = null;
         private List<IGameUpdate> scheduledStartElements = new List<IGameUpdate>(256);
         private List<IGameUpdate> scheduledUpdateElements = new List<IGameUpdate>(256);
         private List<GameElement> scheduledDestroyDelayElements = new List<GameElement>();
@@ -56,6 +59,11 @@ namespace SharpityEngine
         public TypeManager TypeManager
         {
             get { return typeManager; }
+        }
+
+        public ContentProvider Content
+        {
+            get { return platform.ContentProvider; }
         }
 
         public GameWindow Window
@@ -122,6 +130,10 @@ namespace SharpityEngine
             frameTimer = Stopwatch.StartNew();
             frameUpdateTimer = Stopwatch.StartNew();
             frameRenderTimer = Stopwatch.StartNew();
+
+            // Create batch renderer
+            batchRenderer = new BatchRenderer(512,
+                Content.Load<Material>("Error.mat"));
 
             // Initialize modules
             gameModules.OnStart();
@@ -206,12 +218,46 @@ namespace SharpityEngine
             frameRenderTimer.Restart();
             //            OnFrameRenderBegin();
 
-            graphicsSurface.GetCurrentTextureView();
+
+            // Get cameras for rendering
+
+            // Get cameras for rendering
+            IReadOnlyList<Camera> activeSortedRenderingCameras = Camera.AllActiveCameras;
+
+            // Check for any active cameras
+            if(activeSortedRenderingCameras.Count == 0)
+            {
+                Debug.LogWarning("No active rendering cameras");
+                return;
+            }
 
             gameModules.OnBeforeDraw();
 
-            // Draw modules
-            gameModules.OnDraw();
+
+            // Create command list for rendering
+            CommandList commandList = GraphicsDevice.CreateCommandList();
+
+            // Start rendering camera
+            foreach (Camera camera in activeSortedRenderingCameras)
+            {
+                // Render the camera
+                camera.Render(commandList);
+
+            }
+
+            // Finish drawing
+            CommandBuffer commandBuffer = commandList.Finish();
+
+            // Submit to queue
+            GraphicsDevice.Queue.Submit(commandBuffer);
+
+            // Release command list
+            commandList.Dispose();
+            commandList = null;
+
+
+            // Present to display
+            GraphicsSurface.Present();
 
             //            // Clear screen
             //            canvas.Clear(GraphicsDevice.ClearColor);
@@ -252,9 +298,6 @@ namespace SharpityEngine
             //            OnFrameRenderEnd();
 
             gameModules.OnAfterDraw();
-
-            // Present surface
-            graphicsSurface.Present();
         }
 
         protected internal virtual void DoGameShutdown()

@@ -94,7 +94,7 @@ namespace SharpityEngine_SDL
         {
         }
 
-        public void OnDraw()
+        public void OnDraw(BatchRenderer batchRenderer)
         {
             TextureView nextView = game.GraphicsSurface.GetCurrentTextureView();
 

@@ -40,6 +40,7 @@ namespace SharpityEngine.Graphics
 
             internal PrimitiveTopology topology = PrimitiveTopology.TriangleStrip;
             internal IndexFormat indexFormat = IndexFormat.Undefined;
+            internal Array indices = null;
             internal List<Vector3> vertices = null;
             internal List<Vector3> normals = null;
             internal List<Vector2> uvs_0 = null;
@@ -56,6 +57,11 @@ namespace SharpityEngine.Graphics
             {
                 get { return topology; }
                 set { topology = value; }
+            }
+
+            public int IndexCount
+            {
+                get { return indices != null ? indices.Length : 0; }
             }
 
             public List<Vector3> Vertices
@@ -134,6 +140,11 @@ namespace SharpityEngine.Graphics
         public IReadOnlyList<SubMesh> SubMeshes
         {
             get { return subMeshes; }
+        }
+
+        public int SubMeshCount
+        {
+            get { return subMeshes.Count; }
         }
 
         // Constructor

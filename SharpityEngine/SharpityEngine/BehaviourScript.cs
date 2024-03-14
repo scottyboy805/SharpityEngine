@@ -5,12 +5,25 @@ namespace SharpityEngine
     {
         // Private
         private int priority = 0;
+        private Transform transform = null;
 
         // Properties
         public int Priority
         {
             get { return priority; }
             set { priority = value; }
+        }
+
+        public Transform Transform
+        {
+            get
+            {
+                // Get transform
+                if (transform == null)
+                    transform = GameObject.Transform;
+
+                return transform;
+            }
         }
 
         // Methods

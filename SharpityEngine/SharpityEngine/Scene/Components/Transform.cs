@@ -13,8 +13,9 @@ namespace SharpityEngine
         [DataMember(Name = "LocalScale")]
         private Vector3 localScale = Vector3.One;
 
-        private Transform parent = null;
-        private List<Transform> children = null;
+        // Internal
+        internal Transform parent = null;
+        internal List<Transform> children = null;
 
         // Properties
         

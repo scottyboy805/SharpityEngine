@@ -1,5 +1,6 @@
 ﻿using SDL2;
 using SharpityEngine;
+using SharpityEngine.Content;
 using SharpityEngine.Graphics;
 
 namespace SharpityEngine_SDL
@@ -8,7 +9,7 @@ namespace SharpityEngine_SDL
     {
         // Private
         private Version sdlVersion = null;
-        private SDL2_GameWindow sdlWindow = null;
+        private SDL2_GameWindow sdlWindow = null;        
 
         // Properties
         public override string APIName => "SDL2";
@@ -16,7 +17,8 @@ namespace SharpityEngine_SDL
         public override Version APIVersion => sdlVersion;
 
         // Constructor
-        public SDL2_GamePlatform()
+        public SDL2_GamePlatform(ContentProvider content)
+            : base(content)
         {
             // Attach console logger
             Debug.AddLogger(new Debug.ConsoleLogger());
@@ -38,7 +40,7 @@ namespace SharpityEngine_SDL
             await InitializeAsync();
 
             // Start game loop
-            while(GameProvider.ShouldExit == false)
+            while(Game.ShouldExit == false)
             {
                 // Update platform and game
                 Tick();
@@ -84,7 +86,7 @@ namespace SharpityEngine_SDL
                     // Quit
                     case SDL.SDL_EventType.SDL_QUIT:
                         {
-                            GameProvider.Exit(0);
+                            Game.Exit(0);
                             return;
                         }
 

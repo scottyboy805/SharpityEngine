@@ -1,4 +1,6 @@
 ﻿
+using SharpityEngine.Graphics;
+
 namespace SharpityEngine
 {
     internal interface IGameModule : IGameUpdate, IGameDraw
@@ -42,7 +44,6 @@ namespace SharpityEngine
         public int Priority => throw new NotImplementedException();
         public bool Enabled => throw new NotImplementedException();
         public int DrawOrder => throw new NotImplementedException();
-        public bool Visible => throw new NotImplementedException();
 
         // Methods
         public void AddModule(IGameModule module)
@@ -149,11 +150,31 @@ namespace SharpityEngine
                 => module.OnBeforeDraw());
         }
 
-        public void OnDraw()
+        public void OnDrawEarly(BatchRenderer batchRenderer)
+        {
+            // Call draw
+            SafeCallModule(drawModules, (IGameModule module) =>
+            {
+                if(module.DrawOrder < 0)
+                    module.OnDraw(batchRenderer);
+            });
+        }
+
+        public void OnDrawLate(BatchRenderer batchRenderer)
+        {
+            // Call draw
+            SafeCallModule(drawModules, (IGameModule module) =>
+            {
+                if (module.DrawOrder > 0)
+                    module.OnDraw(batchRenderer);
+            });
+        }
+
+        public void OnDraw(BatchRenderer batchRenderer)
         {
             // Call draw
             SafeCallModule(drawModules, (IGameModule module)
-                => module.OnDraw());
+                => module.OnDraw(batchRenderer));
         }
 
         public void OnAfterDraw()

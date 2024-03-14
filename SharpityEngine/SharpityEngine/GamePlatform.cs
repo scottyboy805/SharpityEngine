@@ -1,4 +1,5 @@
-﻿using SharpityEngine.Graphics;
+﻿using SharpityEngine.Content;
+using SharpityEngine.Graphics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -11,7 +12,8 @@ namespace SharpityEngine
         // Private
         private bool isInitialized = false;
         private TypeManager typeManager = null;
-        private Game gameProvider = null;
+        private ContentProvider contentProvider = null;
+        private Game game = null;
         
         // Properties
         public abstract string APIName { get; }
@@ -22,15 +24,21 @@ namespace SharpityEngine
             get { return typeManager; }
         }
 
-        public Game GameProvider
+        public ContentProvider ContentProvider
         {
-            get { return gameProvider; }
+            get { return contentProvider; }
+        }
+
+        public Game Game
+        {
+            get { return game; }
         }
 
         // Constructor
-        protected GamePlatform()
+        protected GamePlatform(ContentProvider contentProvider)
         {
-            typeManager = new TypeManager();
+            this.typeManager = contentProvider.typeManager;
+            this.contentProvider = contentProvider;
         }
 
         // Methods
@@ -150,10 +158,10 @@ namespace SharpityEngine
 
 
             // Create the game provider
-            gameProvider = CreateGame(window, surface, adapter, device);
+            game = CreateGame(window, surface, adapter, device);
 
             // Initialize the game
-            gameProvider.DoGameInitialize();
+            game.DoGameInitialize();
 
             // Mark as initialized
             isInitialized = true;
@@ -172,13 +180,13 @@ namespace SharpityEngine
             }
 
             // Run a game frame
-            gameProvider.DoGameFrame();
+            game.DoGameFrame();
         }
 
         public virtual void Shutdown()
         {
             // Shutdown game
-            gameProvider.DoGameShutdown();
+            game.DoGameShutdown();
 
             Debug.Log("Shutdown complete! Exit process...");
 
