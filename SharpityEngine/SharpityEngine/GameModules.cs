@@ -105,6 +105,17 @@ namespace SharpityEngine
             }
         }
 
+        public IEnumerable<IGameModule> EnumerateDrawModules(int minDrawOrder, int maxDrawOrder)
+        {
+            foreach (IGameModule module in drawModules)
+            {
+                if (module.DrawOrder >= minDrawOrder && module.DrawOrder < maxDrawOrder)
+                {
+                    yield return module;
+                }
+            }
+        }
+
         public void OnFrameStart()
         {
             // Call frame start

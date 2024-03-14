@@ -96,19 +96,19 @@ namespace SharpityEngine_SDL
 
         public void OnDraw(BatchRenderer batchRenderer)
         {
-            TextureView nextView = game.GraphicsSurface.GetCurrentTextureView();
+            //TextureView nextView = game.GraphicsSurface.GetCurrentTextureView();
 
-            // Check for could not acquire
-            if(nextView == null)
-            {
-                Debug.LogError("Could not acquire next swap chain texture");
-                return;
-            }
+            //// Check for could not acquire
+            //if(nextView == null)
+            //{
+            //    Debug.LogError("Could not acquire next swap chain texture");
+            //    return;
+            //}
 
-            CommandList commandList = game.GraphicsDevice.CreateCommandList();
-            RenderCommandList renderCommandList = commandList.BeginRenderPass(new ColorAttachment[] {
-                new ColorAttachment(nextView, Color.CornflowerBlue) },
-                new DepthStencilAttachment(depthTextureView));
+            //CommandList commandList = game.GraphicsDevice.CreateCommandList();
+            //RenderCommandList renderCommandList = commandList.BeginRenderPass(new ColorAttachment[] {
+            //    new ColorAttachment(nextView, Color.CornflowerBlue) },
+            //    new DepthStencilAttachment(depthTextureView));
         }
 
         public void OnAfterDraw()

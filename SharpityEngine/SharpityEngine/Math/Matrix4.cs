@@ -231,7 +231,7 @@ namespace SharpityEngine
             if (farPlane <= 0.0f)
                 throw new ArgumentOutOfRangeException(nameof(farPlane));
 
-            if (farPlane >= nearPlane)
+            if (nearPlane >= farPlane)
                 throw new ArgumentOutOfRangeException(nameof(nearPlane));
 
             float yScale = 1.0f / (float)Math.Tan(fov * 0.5f);
@@ -571,6 +571,12 @@ namespace SharpityEngine
             result.M44 = 1.0f;
 
             return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Matrix4 UniformScale(float scale)
+        {
+            return Scale(scale, scale, scale);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

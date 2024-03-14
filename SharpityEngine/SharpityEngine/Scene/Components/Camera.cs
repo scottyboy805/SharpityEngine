@@ -29,10 +29,8 @@ namespace SharpityEngine
 
         private BatchRenderer batchRenderer = null;
         private Matrix4 viewProjectionMatrix = Matrix4.Identity;
-        private Texture depthTexture = null;
         private TextureView depthTextureView = null;
         private TextureView renderTextureView = null;
-        private HashSet<IGameDraw> drawCalls = new HashSet<IGameDraw>();
 
         [DataMember(Name = "RenderTexture")]
         private Texture renderTexture = null;
@@ -74,7 +72,7 @@ namespace SharpityEngine
 
         public Texture DepthTexture
         {
-            get { return depthTexture; }
+            get { return depthTextureView.Texture; }
         }
 
         public Texture RenderTexture
@@ -83,6 +81,14 @@ namespace SharpityEngine
             set
             {
                 renderTexture = value;
+
+                // Release depth texture
+                if(depthTextureView != null)
+                {
+                    depthTextureView.Texture.Destroy();
+                    depthTextureView = null;
+                }
+
                 CreateViewProjectionMatrix();
             }
         }
@@ -314,10 +320,11 @@ namespace SharpityEngine
 
         private void RenderPass(CommandList commandList, TextureView renderView, in Matrix4 viewProjection)
         {
-            // Create depth texture
-            if(depthTexture == null)
+            // Check for depth texture before starting render pass
+            if(depthTextureView == null)
             {
-                depthTexture = Game.GraphicsDevice.CreateTexture2D(RenderWidth, RenderHeight, TextureFormat.Depth32Float, TextureUsage.RenderAttachment);
+                // Create depth texture
+                Texture depthTexture = Game.GraphicsDevice.CreateTexture2D(RenderWidth, RenderHeight, TextureFormat.Depth32Float, TextureUsage.RenderAttachment);
                 depthTextureView = depthTexture.CreateView();
             }
 
@@ -329,44 +336,17 @@ namespace SharpityEngine
             // Start batch
             batchRenderer.Begin(renderPass);
             {
-                // Draw early game modules
-                Game.GameModules.OnDrawEarly(batchRenderer);
-
-
-                // Get all scenes
-                foreach(GameScene scene in Game.GameModules.EnumerateModulesOfType<GameScene>())
+                // Draw early modules stage
+                foreach(IGameModule drawModule in Game.GameModules.EnumerateDrawModules(int.MinValue, 0))
                 {
-                    // Check for scene visible
-                    if (scene.Enabled == false)
-                        continue;
-
-                    // Get draw calls
-                    HashSet<IGameDraw> sceneDrawCalls = scene.sceneDrawCalls;
-
-                    // Check for any draw calls
-                    if (scene.sceneDrawCalls == null || scene.sceneDrawCalls.Count == 0)
-                        continue;
-
-                    // Before draw all
-                    foreach (IGameDraw drawCall in scene.sceneDrawCalls)
-                        drawCall.OnBeforeDraw();
-
-                    // Main draw loop
-                    // Draw all
-                    foreach(IGameDraw drawCall in sceneDrawCalls)
-                    {
-                        // Submit the batched draw request
-                        drawCall.OnDraw(batchRenderer);
-                    }
-
-                    // After draw all
-                    foreach (IGameDraw drawCall in scene.sceneDrawCalls)
-                        drawCall.OnAfterDraw();
+                    RenderPassModule(drawModule);
                 }
 
-
-                // Draw late game modules
-                Game.GameModules.OnDrawLate(batchRenderer);
+                // Draw late modules stage
+                foreach(IGameModule drawModule in Game.GameModules.EnumerateDrawModules(0, int.MaxValue))
+                {
+                    RenderPassModule(drawModule);
+                }
             }
             // End batch
             batchRenderer.End();
@@ -374,9 +354,50 @@ namespace SharpityEngine
             // Release render pass
             renderPass.Dispose();
             renderPass = null;
+        }
 
-            // Clear draw calls
-            drawCalls.Clear();
+        private void RenderPassModule(IGameModule module)
+        {
+            // Check for scene
+            GameScene scene = module as GameScene;
+
+            
+            // Check for standard module
+            if(scene == null)
+            {
+                module.OnBeforeDraw();
+                module.OnDraw(batchRenderer);
+                module.OnAfterDraw();
+                return;
+            }
+
+
+            // Check for scene visible
+            if (scene.Enabled == false)
+                return;
+
+            // Get draw calls
+            HashSet<IGameDraw> sceneDrawCalls = scene.sceneDrawCalls;
+
+            // Check for any draw calls
+            if (scene.sceneDrawCalls == null || scene.sceneDrawCalls.Count == 0)
+                return;
+
+            // Before draw all
+            foreach (IGameDraw drawCall in scene.sceneDrawCalls)
+                drawCall.OnBeforeDraw();
+
+            // Main draw loop
+            // Draw all
+            foreach (IGameDraw drawCall in sceneDrawCalls)
+            {
+                // Submit the batched draw request
+                drawCall.OnDraw(batchRenderer);
+            }
+
+            // After draw all
+            foreach (IGameDraw drawCall in scene.sceneDrawCalls)
+                drawCall.OnAfterDraw();
         }
 
         private void CreateViewProjectionMatrix()

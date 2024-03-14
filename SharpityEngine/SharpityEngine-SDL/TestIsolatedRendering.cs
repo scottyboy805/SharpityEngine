@@ -33,7 +33,8 @@ namespace SharpityEngine_SDL
 
         struct UniformBuffer
         {
-            public Matrix4x4 Transform;
+            // Matrix4x4 Transform;
+            public Matrix4 Transform;
         }
 
         struct SDLWindow : IGraphicsContext_WindowsNative
@@ -83,7 +84,8 @@ namespace SharpityEngine_SDL
 
             UniformBuffer uniformBufferData = new UniformBuffer
             {
-                Transform = Matrix4x4.Identity
+                //Transform = Matrix4x4.Identity
+                Transform = Matrix4.Identity
             };
 
             // Uniform buffer
@@ -177,17 +179,30 @@ namespace SharpityEngine_SDL
                     (float)(mouseY * 1 - prevHeight * 0.5f) / prevHeight
                 );
 
+                //uniformBufferData.Transform =
+                //    Matrix4x4.CreateRotationY(
+                //        MathF.Sign(nrmMouseCoords.X) * (MathF.Log(Math.Abs(nrmMouseCoords.X) + 1)) * 0.9f
+                //    ) *
+                //    Matrix4x4.CreateRotationX(
+                //        MathF.Sign(nrmMouseCoords.Y) * (MathF.Log(Math.Abs(nrmMouseCoords.Y) + 1)) * 0.9f
+                //    ) *
+                //    Matrix4x4.CreateScale(
+                //        (float)(1 + 0.1 * Math.Sin(duration.TotalSeconds * 2.0))
+                //    ) *
+                //    Matrix4x4.CreateTranslation(0, 0, -5)
+                //    ;
+
                 uniformBufferData.Transform =
-                    Matrix4x4.CreateRotationY(
-                        MathF.Sign(nrmMouseCoords.X) * (MathF.Log(Math.Abs(nrmMouseCoords.X) + 1)) * 0.9f
+                    Matrix4.RotationY(
+                        Mathf.RadToDeg * MathF.Sign(nrmMouseCoords.X) * (MathF.Log(Math.Abs(nrmMouseCoords.X) + 1)) * 0.9f
                     ) *
-                    Matrix4x4.CreateRotationX(
-                        MathF.Sign(nrmMouseCoords.Y) * (MathF.Log(Math.Abs(nrmMouseCoords.Y) + 1)) * 0.9f
+                    Matrix4.RotationX(
+                        Mathf.RadToDeg * MathF.Sign(nrmMouseCoords.Y) * (MathF.Log(Math.Abs(nrmMouseCoords.Y) + 1)) * 0.9f
                     ) *
-                    Matrix4x4.CreateScale(
+                    Matrix4.UniformScale(
                         (float)(1 + 0.1 * Math.Sin(duration.TotalSeconds * 2.0))
                     ) *
-                    Matrix4x4.CreateTranslation(0, 0, -5)
+                    Matrix4.Translate(0, 0, -5)
                     ;
 
                 uniformBufferData.Transform *=
@@ -243,7 +258,40 @@ namespace SharpityEngine_SDL
             }
         }
 
-        private static Matrix4x4 CreatePerspective(float fov, float aspectRatio, float near, float far)
+        //private static Matrix4x4 CreatePerspective(float fov, float aspectRatio, float near, float far)
+        //{
+        //    if (fov <= 0.0f || fov >= MathF.PI)
+        //        throw new ArgumentOutOfRangeException(nameof(fov));
+
+        //    if (near <= 0.0f)
+        //        throw new ArgumentOutOfRangeException(nameof(near));
+
+        //    if (far <= 0.0f)
+        //        throw new ArgumentOutOfRangeException(nameof(far));
+
+        //    float yScale = 1.0f / MathF.Tan(fov * 0.5f);
+        //    float xScale = yScale / aspectRatio;
+
+        //    Matrix4x4 result;
+
+        //    result.M11 = xScale;
+        //    result.M12 = result.M13 = result.M14 = 0.0f;
+
+        //    result.M22 = yScale;
+        //    result.M21 = result.M23 = result.M24 = 0.0f;
+
+        //    result.M31 = result.M32 = 0.0f;
+        //    var negFarRange = float.IsPositiveInfinity(far) ? -1.0f : far / (near - far);
+        //    result.M33 = negFarRange;
+        //    result.M34 = -1.0f;
+
+        //    result.M41 = result.M42 = result.M44 = 0.0f;
+        //    result.M43 = near * negFarRange;
+
+        //    return result;
+        //}
+
+        private static Matrix4 CreatePerspective(float fov, float aspectRatio, float near, float far)
         {
             if (fov <= 0.0f || fov >= MathF.PI)
                 throw new ArgumentOutOfRangeException(nameof(fov));
@@ -257,23 +305,26 @@ namespace SharpityEngine_SDL
             float yScale = 1.0f / MathF.Tan(fov * 0.5f);
             float xScale = yScale / aspectRatio;
 
-            Matrix4x4 result;
+            fov = Mathf.RadToDeg * fov;
 
-            result.M11 = xScale;
-            result.M12 = result.M13 = result.M14 = 0.0f;
+            return Matrix4.PerspectiveFieldOfView(fov, aspectRatio, near, far);
+            //Matrix4x4 result;
 
-            result.M22 = yScale;
-            result.M21 = result.M23 = result.M24 = 0.0f;
+            //result.M11 = xScale;
+            //result.M12 = result.M13 = result.M14 = 0.0f;
 
-            result.M31 = result.M32 = 0.0f;
-            var negFarRange = float.IsPositiveInfinity(far) ? -1.0f : far / (near - far);
-            result.M33 = negFarRange;
-            result.M34 = -1.0f;
+            //result.M22 = yScale;
+            //result.M21 = result.M23 = result.M24 = 0.0f;
 
-            result.M41 = result.M42 = result.M44 = 0.0f;
-            result.M43 = near * negFarRange;
+            //result.M31 = result.M32 = 0.0f;
+            //var negFarRange = float.IsPositiveInfinity(far) ? -1.0f : far / (near - far);
+            //result.M33 = negFarRange;
+            //result.M34 = -1.0f;
 
-            return result;
+            //result.M41 = result.M42 = result.M44 = 0.0f;
+            //result.M43 = near * negFarRange;
+
+            //return result;
         }
     }
     

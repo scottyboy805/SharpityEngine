@@ -278,6 +278,11 @@ namespace SharpityEngine
         //    }
         //}
 
+        public void Destroy()
+        {
+
+        }
+
         ///// <summary>
         ///// Destroy this element after the specified amout of time has elapsed.
         ///// Use <see cref="IsDestroyed"/> to determine whether a game element can be accessed.
