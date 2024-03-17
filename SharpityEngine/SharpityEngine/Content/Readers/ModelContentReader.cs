@@ -54,7 +54,7 @@ namespace SharpityEngine.Content.Readers
         public bool RequireStreamSeeking => false;
 
         // Methods
-        public Task<object> ReadContentAsync(Stream readStream, in IContentReader.ContentReadContext context, CancellationToken cancelToken)
+        public Task<object> ReadContentAsync(Stream readStream, IContentReader.ContentReadContext context, CancellationToken cancelToken)
         {
             // Create import context
             AssimpContext importContext = new AssimpContext();

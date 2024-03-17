@@ -40,7 +40,8 @@ namespace SharpityEngine.Graphics
 
             internal PrimitiveTopology topology = PrimitiveTopology.TriangleStrip;
             internal IndexFormat indexFormat = IndexFormat.Undefined;
-            internal Array indices = null;
+            internal List<ushort> indicesI16 = null;
+            internal List<uint> indicesI32 = null;
             internal List<Vector3> vertices = null;
             internal List<Vector3> normals = null;
             internal List<Vector2> uvs_0 = null;
@@ -61,7 +62,43 @@ namespace SharpityEngine.Graphics
 
             public int IndexCount
             {
-                get { return indices != null ? indices.Length : 0; }
+                get 
+                {
+                    return indexFormat switch
+                    {
+                        IndexFormat.Uint16 => indicesI16.Count,
+                        IndexFormat.Uint32 => indicesI32.Count,
+                        _ => 0,
+                    };
+                }
+            }
+
+            public List<ushort> IndicesI16
+            {
+                get
+                {
+                    if(indicesI16 == null) indicesI16 = new List<ushort>();
+
+                    // Switch index format
+                    indexFormat = IndexFormat.Uint16;
+                    indicesI32 = null;
+
+                    return indicesI16;
+                }
+            }
+
+            public List<uint> IndicesI32
+            {
+                get
+                {
+                    if(indicesI32 == null) indicesI32 = new List<uint>();
+
+                    // Switch index format
+                    indexFormat = IndexFormat.Uint32;
+                    indicesI16 = null;
+
+                    return indicesI32;
+                }
             }
 
             public List<Vector3> Vertices
@@ -318,6 +355,8 @@ namespace SharpityEngine.Graphics
             // Calculate flags
             MeshFlags subMeshFlags = 0;
 
+            // Indicies
+            if ((subMesh.indicesI16 != null && subMesh.indicesI16.Count > 0) || (subMesh.indicesI32 != null && subMesh.indicesI32.Count > 0)) subMeshFlags |= MeshFlags.Index;
             // Vertices
             if (subMesh.vertices != null && subMesh.vertices.Count > 0) subMeshFlags |= MeshFlags.Vertices;            
             // Normals
@@ -377,7 +416,23 @@ namespace SharpityEngine.Graphics
                 };
             }
 
-            // Create buffer
+            // Create index buffer
+            if ((subMeshFlags & MeshFlags.Index) != 0)
+            {
+                // Check for index size
+                if(subMesh.indexFormat == IndexFormat.Uint32)
+                {
+                    Span<uint> indices = CollectionsMarshal.AsSpan(subMesh.indicesI32);
+                    subMesh.indexBuffer = Game.GraphicsDevice.CreateBuffer(indices, BufferUsage.Index, Name + " Index Buffer");
+                }
+                else if(subMesh.indexFormat == IndexFormat.Uint16)
+                {
+                    Span<ushort> indices = CollectionsMarshal.AsSpan(subMesh.indicesI16);
+                    subMesh.indexBuffer = Game.GraphicsDevice.CreateBuffer(indices, BufferUsage.Index, Name + " Index Buffer");
+                }
+            }
+
+            // Create vertex buffer
             subMesh.vertexBuffer = Game.GraphicsDevice.CreateBuffer(vertices, BufferUsage.Vertex, Name + " Vertex Buffer");
         }
 

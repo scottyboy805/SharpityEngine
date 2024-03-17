@@ -13,7 +13,7 @@ namespace SharpityEngine.Content.Readers
         public bool RequireStreamSeeking => true;
 
         // Methods
-        public Task<object> ReadContentAsync(Stream readStream, in IContentReader.ContentReadContext context, CancellationToken cancelToken)
+        public Task<object> ReadContentAsync(Stream readStream, IContentReader.ContentReadContext context, CancellationToken cancelToken)
         {
             // Try to read image
             ImageResult result = ImageResult.FromStream(readStream, ColorComponents.RedGreenBlueAlpha);

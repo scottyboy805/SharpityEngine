@@ -8,8 +8,11 @@ namespace SharpityEngine.Scene
         // Internal
         internal HashSet<IGameDraw> sceneDrawCalls = new HashSet<IGameDraw>();
         internal HashSet<IGameUpdate> sceneUpdateCalls = new HashSet<IGameUpdate>();
+        internal bool startCalled = false;
 
         // Private
+        private Queue<IGameUpdate> sceneNewObjectsThisFrame = new Queue<IGameUpdate>();
+
         [DataMember(Name = "Enabled")]
         private bool enabled = true;
         [DataMember(Name = "Priority")]
@@ -49,10 +52,60 @@ namespace SharpityEngine.Scene
 
         public void OnStart()
         {
+            // Set flag
+            startCalled = true;
+
+            // Start all objects
+            foreach(IGameUpdate updateCall in sceneUpdateCalls)
+            {
+                try
+                {
+                    // Call start
+                    updateCall.OnStart();
+                }
+                catch (Exception e)
+                {
+                    // Log exception
+                    Debug.LogException(e);
+                }
+            }
         }
 
         public void OnUpdate(GameTime gameTime)
         {
+            // Check for waiting objects
+            while(sceneNewObjectsThisFrame.Count > 0)
+            {
+                // Get the update call
+                IGameUpdate updateCall = sceneNewObjectsThisFrame.Dequeue();
+
+                try
+                {
+                    // Call start
+                    updateCall.OnStart();
+                }
+                catch (Exception e)
+                {
+                    // Log exception
+                    Debug.LogException(e);
+                }
+            }
+
+
+            // Update all objects
+            foreach(IGameUpdate updateCall in sceneUpdateCalls)
+            {
+                try
+                {
+                    // Call update
+                    updateCall.OnUpdate(gameTime);
+                }
+                catch (Exception e)
+                {
+                    // Log exception
+                    Debug.LogException(e);
+                }
+            }
         }
 
         void IGameModule.OnDestroy()

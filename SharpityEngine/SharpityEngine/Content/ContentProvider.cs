@@ -365,19 +365,19 @@ namespace SharpityEngine.Content
             Debug.Log(LogFilter.Content, "Load bundle: " + nameOrPath);
 
             // Try to get the bundle stream
-            ContentReaderInfo importerContext;
+            ContentReaderInfo importerInfo;
             Task<ContentReaderInfo> streamTask = GetContentStream(nameOrPath, null, typeof(ContentBundle), false);
 
             // Wait for stream to load
             streamTask.Wait();
-            importerContext = streamTask.Result;
+            importerInfo = streamTask.Result;
 
             // Check for error
-            if (importerContext.stream == null)
+            if (importerInfo.stream == null)
                 return null;
 
             // Load the target bundle - keep stream open
-            ContentBundle bundle = ContentBundle.LoadBundle(this, importerContext.stream, nameOrPath);
+            ContentBundle bundle = ContentBundle.LoadBundle(importerInfo.stream, importerInfo.context);
 
             // Register bundle
             if (bundle != null)
@@ -403,7 +403,7 @@ namespace SharpityEngine.Content
                 return null;
 
             // Load the target bundle - keep stream open
-            ContentBundle bundle = await Task.Run(() => ContentBundle.LoadBundle(this, importerContext.stream, nameOrPath));
+            ContentBundle bundle = await Task.Run(() => ContentBundle.LoadBundle(importerContext.stream, importerContext.context));
 
             // Register bundle
             if (bundle != null)

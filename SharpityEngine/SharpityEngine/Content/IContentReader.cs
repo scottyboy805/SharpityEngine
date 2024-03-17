@@ -48,6 +48,6 @@ namespace SharpityEngine.Content
         bool RequireStreamSeeking { get; }
 
         // Methods
-        Task<object> ReadContentAsync(Stream readStream, in ContentReadContext context, CancellationToken cancelToken);
+        Task<object> ReadContentAsync(Stream readStream, ContentReadContext context, CancellationToken cancelToken);
     }
 }

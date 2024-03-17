@@ -218,7 +218,7 @@ namespace SharpityEngine.Content
             }
         }
 
-        internal static ContentBundle LoadBundle(ContentProvider provider, Stream stream, string path)
+        internal static ContentBundle LoadBundle(Stream stream, IContentReader.ContentReadContext context)
         {
             // Check for null
             if (stream == null)
@@ -236,7 +236,7 @@ namespace SharpityEngine.Content
                 throw new BadImageFormatException("Not a valid content bundle");
 
             // Create the bundle
-            ContentBundle bundle = new ContentBundle(provider, path);
+            ContentBundle bundle = new ContentBundle(context.ContentProvider, context.ContentPath);
 
             // Open zip
             ZipArchive archive = new ZipArchive(stream, ZipArchiveMode.Read);
@@ -252,7 +252,8 @@ namespace SharpityEngine.Content
             ContentBundleAssetIndex index = null;
 
             // Create loader
-            JsonDeserializeFormatter formatter = new JsonDeserializeFormatter(null, provider.typeManager, path);
+            JsonDeserializeFormatter formatter = new JsonDeserializeFormatter(new IContentReader.ContentReadContext(
+                null, context.ContentProvider, bundle, null, "Assets.index"));
 
             // Try to load asset index
             using (Stream indexStream = indexEntry.Open())

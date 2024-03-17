@@ -104,6 +104,8 @@ namespace SharpityEngine_SDL
             // Shader
             Shader shader = device.CreateShaderSource(File.ReadAllText("shader.wgsl"));
 
+            Shader errorShader = device.CreateShaderSource(File.ReadAllText("Error.wgsl"));
+
             // Material
             Material material = new Material(shader);
 
@@ -111,6 +113,12 @@ namespace SharpityEngine_SDL
             material.SetSampler(sampler, 1);
             material.SetTextureView(texture.CreateView(), 2);
             material.Apply();
+
+            Material errorMaterial = new Material(errorShader);
+            errorMaterial.SetBuffer(uniformBuffer, 0);
+            errorMaterial.SetSampler(sampler, 1);
+            errorMaterial.SetTextureView(texture.CreateView(), 2);
+            errorMaterial.Apply();
 
             TextureFormat swapChainFormat = surface.GetPreferredFormat(adapter);
 
@@ -137,7 +145,7 @@ namespace SharpityEngine_SDL
             GameObject gameObject = gameScene.CreateEmptyObject("Cube");
             MeshRenderer meshRenderer = gameObject.CreateComponent<MeshRenderer>();
             meshRenderer.Mesh = cubeMesh;
-            meshRenderer.Material = material;
+            meshRenderer.Material = errorMaterial;// material;
 
             GameObject cameraObject = gameScene.CreateEmptyObject("Camera");
             Camera camera = cameraObject.CreateComponent<Camera>();

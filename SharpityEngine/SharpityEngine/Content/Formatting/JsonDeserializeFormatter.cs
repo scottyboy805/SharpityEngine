@@ -32,6 +32,7 @@ namespace SharpityEngine.Content
         // Private
 #if !SIMPLE2D_DEDICATEDSERVER
         private ContentProvider contentProvider = null;
+        private IContentReader.ContentReadContext context = default;
 #endif
         private TypeManager typeManager = null;
         private string contentInfo = null;
@@ -44,11 +45,9 @@ namespace SharpityEngine.Content
 
         // Constructor
 #if !SIMPLE2D_DEDICATEDSERVER
-        public JsonDeserializeFormatter(ContentProvider contentProvider, TypeManager typeManager, string contentInfo)
+        public JsonDeserializeFormatter(IContentReader.ContentReadContext context)
         {
-            this.contentProvider = contentProvider;
-            this.typeManager = typeManager;
-            this.contentInfo = contentInfo;
+            this.context = context;
         }
 #else
         public JsonDeserializeFormatter(TypeManager typeManager)
