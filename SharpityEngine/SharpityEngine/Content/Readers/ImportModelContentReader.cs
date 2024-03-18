@@ -48,7 +48,7 @@ namespace SharpityEngine.Content.Readers
     [ContentReader(".hmp")]
     [ContentReader(".ndo")]
     #endregion
-    internal sealed class ModelContentReader : IContentReader
+    internal sealed class ImportModelContentReader : IContentReader
     {
         // Properties
         public bool RequireStreamSeeking => false;

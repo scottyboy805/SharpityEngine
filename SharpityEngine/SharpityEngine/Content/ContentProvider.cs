@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 using SharpityEngine.Scene;
 
@@ -12,9 +13,17 @@ namespace SharpityEngine.Content
         protected internal struct ContentReaderInfo
         {
             // Public
-            public Stream stream;
-            public IContentReader reader;
-            public IContentReader.ContentReadContext context;
+            public Stream Stream;
+            public IContentReader Reader;
+            public IContentReader.ContentReadContext Context;
+        }
+
+        protected internal struct ContentWriterInfo
+        {
+            // Public
+            public Stream Stream;
+            public IContentWriter Writer;
+            public IContentWriter.ContentWriteContext Context;
         }
 
         // Internal
@@ -22,6 +31,7 @@ namespace SharpityEngine.Content
 
         // Private
         private Dictionary<string, Type> contentReaders = new Dictionary<string, Type>();   // Extension, IContentReader type
+        private Dictionary<(Type, bool), Type> contentWriters = new Dictionary<(Type, bool), Type>();       // Tuple(Content Type, optimized), IContentWriter type
         private ConcurrentDictionary<string, GameElement> contentPathCache = new ConcurrentDictionary<string, GameElement>(StringComparer.OrdinalIgnoreCase);
         private ConcurrentDictionary<string, GameElement> contentGuidCache = new ConcurrentDictionary<string, GameElement>();
 
@@ -59,28 +69,49 @@ namespace SharpityEngine.Content
 
             // Load readers
             LoadContentReaders();
+            LoadContentWriters();
         }
 
         // Methods
-        public void Save(GameElement element, string file)
+        public async void SaveAsync(GameElement element, string file, CancellationToken cancelToken = default)
         {
+            // Check for null
+            if (element == null)
+                throw new ArgumentNullException(nameof(element));
+
+            // Start timing
+            Stopwatch timer = Stopwatch.StartNew();
+
             string savePath = file;
 
             // Get output path
             if(Path.IsPathRooted(file) == false)
                 savePath = Path.Combine(contentRootPath, file);
 
-            JsonSerializeFormatter formatter = new JsonSerializeFormatter(typeManager);
+            // Get content writer
+            ContentWriterInfo writerInfo = await GetWriteContentStream(file, element, element.GetType());
 
-            using (JsonWriter writer = new JsonTextWriter(File.CreateText(savePath)))
+            // Check for valid stream
+            if(writerInfo.Stream == null)
             {
-                // Before save
-                if (element is IContentCallback)
-                    ((IContentCallback)element).OnBeforeContentSave();
-                
-                writer.Formatting = Formatting.Indented;
-                formatter.SerializeObject(writer, element);
+                Debug.LogError(LogFilter.Content, "Could not find path: " + file);
+                return;
             }
+
+            // Make sure stream is disposed
+            using(writerInfo.Stream)
+            {
+                // Check for error
+                if (writerInfo.Writer == null)
+                    throw new NotSupportedException("No content writer for file format: " + file);
+
+                // Create for write game element
+                await writerInfo.Writer.WriteContentAsync(element, GetRequiredContentStream(writerInfo.Stream, writerInfo.Writer), writerInfo.Context, cancelToken);
+            }
+
+            // Report saved
+            Debug.Log(LogFilter.Content, "Save content: " + file + " - " + timer.ElapsedMilliseconds + "ms");
+            timer.Stop();
         }
 
         public GameScene LoadScene(string contentPathOrGuid, bool autoActivate = true, ContentBundle bundle = null)
@@ -163,7 +194,7 @@ namespace SharpityEngine.Content
 
             // Get stream
             ContentReaderInfo readerInfo;
-            Task<ContentReaderInfo> streamTask = GetContentStream(contentPathOrGuid, bundle, type);
+            Task<ContentReaderInfo> streamTask = GetReadContentStream(contentPathOrGuid, bundle, type);
 
             if (streamTask.IsFaulted == true)
                 Debug.LogException(streamTask.Exception);
@@ -173,28 +204,28 @@ namespace SharpityEngine.Content
             readerInfo = streamTask.Result;
 
             // Check for valid stream
-            if (readerInfo.stream == null)
+            if (readerInfo.Stream == null)
             {
                 Debug.LogError(LogFilter.Content, "Could not find content: " + contentPathOrGuid);
                 return null;
             }
 
             // Make sure stream is disposed
-            using (readerInfo.stream)
+            using (readerInfo.Stream)
             {
                 // Check for error
-                if (readerInfo.reader == null)
+                if (readerInfo.Reader == null)
                     throw new NotSupportedException("No content reader for file format: " + contentPathOrGuid);
                 
                 // Check for game element reader - Block main thread during load
-                result = readerInfo.reader.ReadContentAsync(GetRequiredContentStream(readerInfo.stream, readerInfo.reader), readerInfo.context, default)
+                result = readerInfo.Reader.ReadContentAsync(GetRequiredContentStream(readerInfo.Stream, readerInfo.Reader), readerInfo.Context, default)
                     .Result as GameElement;
 
                 // Check for success
                 if (result != null)
                 {
                     result.ContentPath = contentPathOrGuid;
-                    result.ContentBundle = readerInfo.context.ContainingBundle;
+                    result.ContentBundle = readerInfo.Context.ContainingBundle;
                 }
                 else
                     Debug.LogError(LogFilter.Content, "Could not load content: " + contentPathOrGuid);
@@ -231,31 +262,31 @@ namespace SharpityEngine.Content
                 type = typeof(GameElement);
 
             // Get stream
-            ContentReaderInfo readerInfo = await GetContentStream(contentPathOrGuid, bundle, type);
+            ContentReaderInfo readerInfo = await GetReadContentStream(contentPathOrGuid, bundle, type);
 
             // Check for valid stream
-            if (readerInfo.stream == null)
+            if (readerInfo.Stream == null)
             {
                 Debug.LogError(LogFilter.Content, "Could not find content: " + contentPathOrGuid);
                 return null;
             }
 
             // Make sure stream is disposed
-            using (readerInfo.stream)
+            using (readerInfo.Stream)
             {
                 // Check for error
-                if (readerInfo.reader == null)
+                if (readerInfo.Reader == null)
                     throw new NotSupportedException("No content reader for file format: " + contentPathOrGuid);
 
                 // Check for game element importer
-                result = await readerInfo.reader.ReadContentAsync(GetRequiredContentStream(readerInfo.stream, readerInfo.reader), readerInfo.context, cancelToken) as GameElement;
+                result = await readerInfo.Reader.ReadContentAsync(GetRequiredContentStream(readerInfo.Stream, readerInfo.Reader), readerInfo.Context, cancelToken) as GameElement;
 
 
                 // Check for success
                 if (result != null)
                 {
                     result.ContentPath = contentPathOrGuid;
-                    result.ContentBundle = readerInfo.context.ContainingBundle;
+                    result.ContentBundle = readerInfo.Context.ContainingBundle;
                 }
                 else
                     Debug.LogError(LogFilter.Content, "Could not load content: " + contentPathOrGuid);
@@ -337,14 +368,14 @@ namespace SharpityEngine.Content
 
             // Try to get the bundle stream
             ContentReaderInfo importerContext;
-            Task<ContentReaderInfo> streamTask = GetContentStream(contentPathOrGuid, bundle, null);
+            Task<ContentReaderInfo> streamTask = GetReadContentStream(contentPathOrGuid, bundle, null);
 
             // Wait for stream to load
             streamTask.Wait();
             importerContext = streamTask.Result;
 
             // Get the stream
-            return importerContext.stream;
+            return importerContext.Stream;
         }
 
         public async Task<Stream> LoadDataStreamAsync(string contentPathOrGuid, ContentBundle bundle = null)
@@ -354,10 +385,10 @@ namespace SharpityEngine.Content
                 throw new ArgumentException("Content path cannot be null or empty");
 
             // Try to get stream
-            ContentReaderInfo importerContext = await GetContentStream(contentPathOrGuid, bundle, null);
+            ContentReaderInfo importerContext = await GetReadContentStream(contentPathOrGuid, bundle, null);
 
             // Get the stream
-            return importerContext.stream;
+            return importerContext.Stream;
         }
 
         public ContentBundle LoadBundle(string nameOrPath)
@@ -366,18 +397,18 @@ namespace SharpityEngine.Content
 
             // Try to get the bundle stream
             ContentReaderInfo importerInfo;
-            Task<ContentReaderInfo> streamTask = GetContentStream(nameOrPath, null, typeof(ContentBundle), false);
+            Task<ContentReaderInfo> streamTask = GetReadContentStream(nameOrPath, null, typeof(ContentBundle), false);
 
             // Wait for stream to load
             streamTask.Wait();
             importerInfo = streamTask.Result;
 
             // Check for error
-            if (importerInfo.stream == null)
+            if (importerInfo.Stream == null)
                 return null;
 
             // Load the target bundle - keep stream open
-            ContentBundle bundle = ContentBundle.LoadBundle(importerInfo.stream, importerInfo.context);
+            ContentBundle bundle = ContentBundle.LoadBundle(importerInfo.Stream, importerInfo.Context);
 
             // Register bundle
             if (bundle != null)
@@ -396,14 +427,14 @@ namespace SharpityEngine.Content
             Debug.Log(LogFilter.Content, "Load bundle async: " + nameOrPath);
 
             // Try to get the bundle stream
-            ContentReaderInfo importerContext = await GetContentStream(nameOrPath, null, typeof(ContentBundle), false);
+            ContentReaderInfo importerContext = await GetReadContentStream(nameOrPath, null, typeof(ContentBundle), false);
 
             // Check for error
-            if (importerContext.stream == null)
+            if (importerContext.Stream == null)
                 return null;
 
             // Load the target bundle - keep stream open
-            ContentBundle bundle = await Task.Run(() => ContentBundle.LoadBundle(importerContext.stream, importerContext.context));
+            ContentBundle bundle = await Task.Run(() => ContentBundle.LoadBundle(importerContext.Stream, importerContext.Context));
 
             // Register bundle
             if (bundle != null)
@@ -517,9 +548,11 @@ namespace SharpityEngine.Content
             contentGuidCache.Clear();
         }
 
-        protected abstract Task<ContentReaderInfo> GetContentStreamFromPath(string contentPath, Type hintType);
+        protected abstract Task<ContentReaderInfo> GetReadContentStreamFromPath(string contentPath, Type hintType);
 
-        private async Task<ContentReaderInfo> GetContentStream(string contentPathOrGuid, ContentBundle bundle, Type hintType, bool allowBundle = true)
+        protected abstract Task<ContentWriterInfo> GetWriteContentStreamFromPath(string contentPath, string guid, Type contentType);
+
+        private async Task<ContentReaderInfo> GetReadContentStream(string contentPathOrGuid, ContentBundle bundle, Type hintType, bool allowBundle = true)
         {
             // Check for bundle
             if (bundle != null)
@@ -532,10 +565,10 @@ namespace SharpityEngine.Content
             }
 
             // Try to get import context
-            ContentReaderInfo result = await GetContentStreamFromPath(contentPathOrGuid, hintType);
+            ContentReaderInfo result = await GetReadContentStreamFromPath(contentPathOrGuid, hintType);
 
             // Check for success
-            if (result.stream != null)
+            if (result.Stream != null)
                 return result;
 
             // Check all bundles
@@ -545,9 +578,26 @@ namespace SharpityEngine.Content
                 result = loadedBundle.GetContentStream(contentPathOrGuid, hintType);
 
                 // Check for success
-                if (result.stream != null)
+                if (result.Stream != null)
                     return result;
             }
+
+            return default;
+        }
+
+        private async Task<ContentWriterInfo> GetWriteContentStream(string contentPath, object content, Type contentType)
+        {
+            // Check for guid
+            string guid = null;
+            if(content is GameElement)
+                guid = ((GameElement)content).Guid;
+
+            // Try to get export context
+            ContentWriterInfo result = await GetWriteContentStreamFromPath(contentPath, guid, contentType);
+
+            // Check for success
+            if (result.Stream != null)
+                return result;
 
             return default;
         }
@@ -597,6 +647,24 @@ namespace SharpityEngine.Content
             return stream;
         }
 
+        private Stream GetRequiredContentStream(Stream stream, IContentWriter contentWriter)
+        {
+            //if (contentWriter.RequireStreamSeeking == true && stream.CanSeek == false)
+            //{
+            //    MemoryStream tempStream = new MemoryStream();
+            //    stream.CopyTo(tempStream);
+
+            //    // Release source stream
+            //    stream.Dispose();
+
+            //    // Return to start of data
+            //    tempStream.Position = 0;
+
+            //    return tempStream;
+            //}
+            return stream;
+        }
+
         internal IContentReader GetContentReaderInstance(string fileExtension)
         {
             // Try to get read type
@@ -606,6 +674,17 @@ namespace SharpityEngine.Content
 
             // Create instance
             return Activator.CreateInstance(readerType) as IContentReader;
+        }
+
+        internal IContentWriter GetContentWriterInstance(Type contentType, bool optimizedWriter)
+        {
+            // Try to get write type
+            Type writerType;
+            if (contentWriters.TryGetValue((contentType, optimizedWriter), out writerType) == false)
+                return null;
+
+            // Create instance
+            return Activator.CreateInstance(writerType) as IContentWriter;
         }
 
         private GameElement AddCachedContent(GameElement element, string hintPath)
@@ -691,6 +770,66 @@ namespace SharpityEngine.Content
 
                             // Store reader type
                             contentReaders[ext] = type;
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+        }
+
+        private void LoadContentWriters()
+        {
+            // Get this assembly name
+            AssemblyName thisAssembly = Assembly.GetExecutingAssembly().GetName();
+
+            try
+            {
+                foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    // Check if we are scanning an external assembly
+                    if (assembly != Assembly.GetExecutingAssembly())
+                    {
+                        // Check if the assembly references sharpity
+                        AssemblyName[] referenceNames = assembly.GetReferencedAssemblies();
+                        bool referenced = false;
+
+                        foreach (AssemblyName assemblyName in referenceNames)
+                        {
+                            if (thisAssembly.FullName == assemblyName.FullName)
+                            {
+                                referenced = true;
+                                break;
+                            }
+                        }
+
+                        // Check for referenced
+                        if (referenced == false)
+                            continue;
+                    }
+
+                    foreach (Type type in assembly.GetTypes())
+                    {
+                        foreach (ContentWriterAttribute attrib in type.GetCustomAttributes<ContentWriterAttribute>())
+                        {
+                            // Check for derived type
+                            if (typeof(IContentWriter).IsAssignableFrom(type) == false)
+                            {
+                                Debug.LogError(LogFilter.Content, "Content writer must implement `IContentWriter`: " + type);
+                                continue;
+                            }
+
+                            // Check for overwrite content reader
+                            if (contentWriters.ContainsKey((attrib.ContentType, attrib.OptimizedWriter)) == true)
+                            {
+                                Debug.LogErrorF(LogFilter.Content, "A content writer already exists for type `{0}`: {1}", type, attrib.ContentType);
+                                continue;
+                            }
+
+                            // Store reader type
+                            contentWriters[(attrib.ContentType, attrib.OptimizedWriter)] = type;
                         }
                     }
                 }

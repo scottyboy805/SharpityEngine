@@ -7,7 +7,7 @@ namespace SharpityEngine.Content.Readers
     [ContentReader(".jpg")]
     [ContentReader(".jpeg")]
     [ContentReader(".png")]
-    internal sealed class ImageTextureContentReader : IContentReader
+    internal sealed class ImportTextureContentReader : IContentReader
     {
         // Properties
         public bool RequireStreamSeeking => true;

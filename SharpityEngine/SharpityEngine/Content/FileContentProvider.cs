@@ -13,7 +13,7 @@ namespace SharpityEngine.Content
         }
 
         // Methods
-        protected override Task<ContentReaderInfo> GetContentStreamFromPath(string contentPath, Type hintType)
+        protected override Task<ContentReaderInfo> GetReadContentStreamFromPath(string contentPath, Type hintType)
         {
             // Check for extension
             bool hasExtension = Path.HasExtension(contentPath);
@@ -24,13 +24,13 @@ namespace SharpityEngine.Content
                 return Task.FromResult(new ContentReaderInfo
                 {
                     // Open the read stream
-                    stream = File.OpenRead(contentPath),
+                    Stream = File.OpenRead(contentPath),
 
                     // Create reader
-                    reader = GetContentReaderInstance(Path.GetExtension(contentPath).ToLower()),
+                    Reader = GetContentReaderInstance(Path.GetExtension(contentPath).ToLower()),
 
                     // Create context
-                    context = new IContentReader.ContentReadContext(hintType, this, 
+                    Context = new IContentReader.ContentReadContext(hintType, this, 
                         null, null, contentPath),           
                 });
             }
@@ -49,13 +49,13 @@ namespace SharpityEngine.Content
                     return Task.FromResult(new ContentReaderInfo
                     {
                         // Open the read stream
-                        stream = File.OpenRead(assetFile),
+                        Stream = File.OpenRead(assetFile),
 
                         // Create reader
-                        reader = GetContentReaderInstance(Path.GetExtension(assetFile).ToLower()),
+                        Reader = GetContentReaderInstance(Path.GetExtension(assetFile).ToLower()),
 
                         // Create context
-                        context = new IContentReader.ContentReadContext(hintType, this,
+                        Context = new IContentReader.ContentReadContext(hintType, this,
                             null, null, assetFile),
                     });
                 }
@@ -63,6 +63,22 @@ namespace SharpityEngine.Content
             catch { }
 
             return Task.FromResult(default(ContentReaderInfo));
+        }
+
+        protected override Task<ContentWriterInfo> GetWriteContentStreamFromPath(string contentPath, string guid, Type contentType)
+        {
+            return Task.FromResult(new ContentWriterInfo
+            {
+                // Open the write stream
+                Stream = File.Create(contentPath),
+
+                // Create writer
+                Writer = GetContentWriterInstance(contentType, false),
+
+                // Create context
+                Context = new IContentWriter.ContentWriteContext(contentType, this, 
+                    null, guid, contentPath),
+            }); 
         }
     }
 }

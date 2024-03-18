@@ -2,6 +2,9 @@
 using SharpityEngine.Graphics;
 using SharpityEngine.Graphics.Pipeline;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("SharpityEditor")]
 
 namespace SharpityEngine
 {

@@ -6,13 +6,15 @@ namespace SharpityEngine.Content
     internal sealed class JsonSerializeFormatter : JsonFormatter
     {
         // Private
+        private IContentWriter.ContentWriteContext context = default;
         private TypeManager typeManager = null;
         private HashSet<GameElement> localInstanceCache = new HashSet<GameElement>();
 
         // Constructor
-        public JsonSerializeFormatter(TypeManager typeManager)
+        public JsonSerializeFormatter(IContentWriter.ContentWriteContext context)
         {
-            this.typeManager = typeManager;
+            this.context = context;
+            this.typeManager = context.ContentProvider.TypeManager;
         }
 
         // Methods

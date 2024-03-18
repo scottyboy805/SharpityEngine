@@ -191,13 +191,13 @@ namespace SharpityEngine.Content
             return new ContentProvider.ContentReaderInfo
             {
                 // Get stream
-                stream = entry.Open(),
+                Stream = entry.Open(),
 
                 // Create reader
-                reader = contentProvider.GetContentReaderInstance(assetEntry.extension),
+                Reader = contentProvider.GetContentReaderInstance(assetEntry.extension),
 
                 // Create context
-                context = new IContentReader.ContentReadContext(hintType, contentProvider, this,
+                Context = new IContentReader.ContentReadContext(hintType, contentProvider, this,
                     assetEntry.guid, assetEntry.path, assetEntry.dataSize),
             };
         }

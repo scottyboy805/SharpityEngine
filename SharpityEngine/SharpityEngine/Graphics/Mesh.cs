@@ -7,7 +7,7 @@ namespace SharpityEngine.Graphics
     {
         // Type
         [Flags]
-        internal enum MeshFlags
+        internal enum MeshFlags : uint
         {
             None = 0,
             Index = 1,
@@ -19,7 +19,7 @@ namespace SharpityEngine.Graphics
             Colors = 64,
         }
 
-        private struct MeshVertex
+        internal struct MeshVertex
         {
             // Public
             public Vector3 Position;            
@@ -145,6 +145,9 @@ namespace SharpityEngine.Graphics
                     return colors;
                 }
             }
+
+            // Constructor
+            internal SubMesh() { }
         }
 
         // Internal
@@ -164,9 +167,9 @@ namespace SharpityEngine.Graphics
             new VertexAttribute(VertexFormat.Float32x2, sizeof(Vector3) + sizeof(Vector4), 2));   // UV 0
 
 
-        // Private
-        private Bounds bounds = default;
-        private List<SubMesh> subMeshes = new List<SubMesh>();        
+        // Internal
+        internal Bounds bounds = default;
+        internal List<SubMesh> subMeshes = new List<SubMesh>();        
         
         // Properties
         public Bounds Bounds
