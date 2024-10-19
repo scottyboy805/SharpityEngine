@@ -1,5 +1,4 @@
-﻿using SharpityEditor._Attribute;
-using SharpityEngine.Content;
+﻿using SharpityEngine.Content;
 using SharpityEngine.Graphics;
 using System.Runtime.Serialization;
 

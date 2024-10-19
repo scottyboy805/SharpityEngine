@@ -4,4 +4,7 @@ using SharpityEditor;
 Console.WriteLine("Hello, World!");
 
 
-new GameEditor().OpenProject("TestProject/TestProject.json");
+using (GameEditor editor = new GameEditor())
+{
+    editor.OpenProject("TestProject/TestProject.json");
+}

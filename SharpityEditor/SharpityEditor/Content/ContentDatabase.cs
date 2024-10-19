@@ -1,32 +1,63 @@
-﻿using Newtonsoft.Json;
-using SharpityEditor._Attribute;
+﻿using LiteDB;
+using Newtonsoft.Json;
 using SharpityEngine;
 using SharpityEngine.Content;
 using System.Reflection;
+using JsonReader = Newtonsoft.Json.JsonReader;
+using JsonWriter = Newtonsoft.Json.JsonWriter;
 
 namespace SharpityEditor.Content
 {
     public sealed class ContentDatabase : ContentProvider
     {
         // Type
-        private struct ContentInfo
+        private sealed class ContentInfo
         {
             // Public
-            public string ContentGuid;
-            public string ContentPath;            
-            public string ContentExtension;
-            public long LastWriteTime;
+            public int Id { get; set; }
+            //[BsonId(false)]
+            public string Guid { get; set; }
+            public string Name { get; set; }
+            public string Folder { get; set; }
+            public string Path { get; set; }
+            public string Extension { get; set; }
+            public string Type { get; set; }
+            public string[] Tags { get; set; }
+            public long LastWriteTimeUTC { get; set; }
+
+            // Constructor
+            internal ContentInfo() { }
+            internal ContentInfo(string path, string folder, string guid, string type)
+            {
+                this.Guid = guid;
+                Update(path, folder, type);   
+            }
+
+            // Methods
+            internal void Update(string path, string folder, string type)
+            {
+                this.Name = System.IO.Path.GetFileNameWithoutExtension(path);
+                this.Folder = folder;
+                this.Path = path;
+                this.Extension = System.IO.Path.GetExtension(path);
+                this.Type = type;
+                this.LastWriteTimeUTC = File.GetLastWriteTimeUtc(path).Ticks;
+            }
         }
 
         // Private
         private const string metaExtension = ".meta";
-
+        private const string dbName = "Content.db";
+        private const string dbContentCollection = "ContentsInfo";
+        private const string dbContentDataCollection = "ContentsData";         // Stores file data for imported content
+            
         private string projectPath = null;
-        private string contentPath = null;
-        private string cachePath = null;
+        private string projectContentPath = null;
+        private string projectCachePath = null;
+        private LiteDatabase contentDB = null;
+        private ILiteCollection<ContentInfo> contentInfoDB = null;
+        private ILiteStorage<string> contentDataDB = null;
         private Dictionary<string, Type> contentImporters = new Dictionary<string, Type>();             // File extension, ContentImporter type
-        private Dictionary<string, ContentInfo> guidContent = new Dictionary<string, ContentInfo>();    // Guid, ContentInfo
-        private Dictionary<string, string> pathContent = new Dictionary<string, string>();              // ContentPath, Guid
 
         // Properties
         public string ProjectPath
@@ -36,12 +67,12 @@ namespace SharpityEditor.Content
 
         public string ContentPath
         {
-            get { return contentPath; }
+            get { return projectContentPath; }
         }
 
         public string CachePath
         {
-            get { return cachePath; }
+            get { return projectCachePath; }
         }
 
         // Constructor
@@ -57,19 +88,34 @@ namespace SharpityEditor.Content
                 throw new ArgumentException("Project folder must exist");
 
             this.projectPath = projectFolder;
-            contentPath = Path.Combine(projectFolder, "Content");
-            cachePath = Path.Combine(projectFolder, "Cache");
-
+            projectContentPath = Path.Combine(projectFolder, "Content");
+            projectCachePath = Path.Combine(projectFolder, "Cache");            
 
             // Create folders if required
-            if(Directory.Exists(contentPath) == false) Directory.CreateDirectory(contentPath);
-            if(Directory.Exists(cachePath) == false) Directory.CreateDirectory(cachePath);
+            if(Directory.Exists(projectContentPath) == false) Directory.CreateDirectory(projectContentPath);
+            if(Directory.Exists(projectCachePath) == false) Directory.CreateDirectory(projectCachePath);
+
+            // Create content database
+            contentDB = new LiteDatabase(Path.Combine(projectCachePath, dbName));
+            
+            // Get the content info set
+            contentInfoDB = contentDB.GetCollection<ContentInfo>(dbContentCollection);
+            contentDataDB = contentDB.GetStorage<string>(dbContentDataCollection);
 
             // Load importers
             LoadContentImporters();
         }
 
         // Methods
+        public override void Dispose()
+        {
+            base.Dispose();
+
+            // Release database
+            contentDB.Dispose();
+            contentDB = null;
+        }
+
         protected override Task<ContentReaderInfo> GetReadContentStreamFromPath(string contentPath, Type hintType)
         {
             throw new NotImplementedException();
@@ -80,10 +126,13 @@ namespace SharpityEditor.Content
             throw new NotImplementedException();
         }
 
-        internal void ScanContent()
+        internal void SyncContentOnDisk()
         {
+            // Store all guids that have been found on disk
+            HashSet<string> guidsOnDisk = new HashSet<string>();
+
             // Search in folder
-            foreach(string contentPath in Directory.EnumerateFiles(contentPath, "*.*", SearchOption.AllDirectories))
+            foreach(string contentPath in Directory.EnumerateFiles(projectContentPath, "*.*", SearchOption.AllDirectories))
             {
                 // Check for meta
                 if (Path.GetExtension(contentPath) == metaExtension)
@@ -101,24 +150,20 @@ namespace SharpityEditor.Content
                     // Load meta
                     ContentImporter importer = GetContentImporter(contentPath);
 
-                    // Get cache path
-                    string contentCachePath = Path.Combine(cachePath, importer.Guid);
-
-                    // Check for cached
-                    if (File.Exists(contentCachePath) == true)
+                    // Check for already registered
+                    if (HasContent(importer.Guid) == true)
                     {
-                        // Create content entry
-                        guidContent[importer.Guid] = new ContentInfo
-                        {
-                            ContentGuid = importer.Guid,
-                            ContentPath = contentRelativePath,
-                            ContentExtension = Path.GetExtension(contentPath),
-                            LastWriteTime = File.GetLastWriteTimeUtc(contentPath).Ticks,
-                        };
-                        pathContent[contentPath] = importer.Guid;
+                        // Register or update the content
+                        RegisterOrUpdateContentDB(contentRelativePath, importer.Guid, importer.Type);
                     }
                     else
+                    {
+                        // Meta file exists but no cached content, so import is still required
                         ImportContent(contentRelativePath);
+                    }
+
+                    // Add entry
+                    guidsOnDisk.Add(importer.Guid);
                 }
                 else
                 {
@@ -126,6 +171,77 @@ namespace SharpityEditor.Content
                     ImportContent(contentRelativePath);
                 }
             }
+
+            // Remove any dead content from the database - content that has been deleted while the project was closed
+            contentInfoDB.DeleteMany(
+                i => guidsOnDisk.Contains(i.Guid) == false);
+        }
+
+        public void CreateContent(string contentPath, GameElement content)
+        {
+            // Check for null
+            if (content == null)
+                throw new ArgumentNullException(nameof(content));
+
+            // Check relative path
+            CheckProjectContentRelativePath(contentPath);
+
+            // Get content full path
+            string contentFullPath = Path.Combine(projectPath, contentPath);
+
+            // Check for already exists
+            if (File.Exists(contentFullPath) == true)
+                throw new ArgumentException("Content path already exists");
+
+            // Check for registered
+            if (HasContentPath(contentPath) == true)
+                throw new InvalidOperationException("Content path is already registered");
+
+            // Register the content with path
+            RegisterContentDB(contentPath, content.Guid, content.Type);
+
+            // Save the changes to the content
+            SaveContent(content);
+        }
+
+        public GameElement ImportContent(string contentPath)
+        {
+            // Check relative path
+            CheckProjectContentRelativePath(contentPath);
+
+            // Get full path
+            string contentFullPath = Path.Combine(projectPath, contentPath);
+
+            // Check for file exists
+            if (File.Exists(contentFullPath) == false)
+                throw new ArgumentException("Content path does not exist");
+
+            // Get content importer
+            ContentImporter importer = GetContentImporter(contentFullPath);
+
+            // Check for importer
+            if (importer == null)
+            {
+                Debug.LogWarning("No importer available for content: " + contentPath);
+                return null;
+            }
+
+            // Import the content file
+            GameElement result = ReadContent(importer, contentFullPath, importer.Guid);
+
+            // Update importer
+            importer.UpdateImporterFromContent(result);
+
+            // Register the new entry
+            ContentInfo importedInfo = RegisterOrUpdateContentDB(contentPath, importer.Guid, importer.Type);
+
+            // Get last write time
+            long lastWriteTime = File.GetLastWriteTimeUtc(contentFullPath).Ticks;
+
+            // Cache the content
+            SaveCachedContent(importedInfo, result, lastWriteTime, importer);
+
+            return result;
         }
 
         public void SaveContent(GameElement content)
@@ -141,6 +257,14 @@ namespace SharpityEditor.Content
             if (string.IsNullOrEmpty(contentPath) == true)
                 throw new InvalidOperationException("Content does not have a persistent path: " + content);
 
+            // Get the content info
+            ContentInfo contentInfo = contentInfoDB.FindOne(
+                Query.EQ(nameof(ContentInfo.Guid), content.Guid));
+
+            // Check for not found
+            if (contentInfo == null)
+                throw new InvalidOperationException("Cannot save unregistered content. You should first use CreateContent or ImportContent before saving");
+
             // Get content type
             Type contentType = content.GetType();
 
@@ -154,17 +278,17 @@ namespace SharpityEditor.Content
             // Write the content to disk
             WriteContent(contentWriter, contentPath, contentType, content);
 
+            // Get write time
+            long lastWriteTime = File.GetLastAccessTimeUtc(contentPath).Ticks;
+
             // Update cache
-            SaveCachedContent(contentPath, content);
+            SaveCachedContent(contentInfo, content, lastWriteTime);
         }
 
-        internal void SaveCachedContent(string contentPath, GameElement content, long timeStamp = -1, ContentImporter importer = null)
+        private void SaveCachedContent(ContentInfo contentInfo, GameElement content, long timeStamp, ContentImporter importer = null)
         {
-            // Get cache path
-            string contentCachePath = Path.Combine(cachePath, content.Guid);
-
-            // Check time stamp - cache may be up to date so no save is required
-            if (timeStamp != -1 && File.Exists(contentCachePath) == true && File.GetLastWriteTimeUtc(contentCachePath).Ticks == timeStamp)
+            // Check time stamp - db may be up to date so no save is required
+            if (contentInfo.LastWriteTimeUTC == timeStamp && File.Exists(importer.MetaPath) == true)
                 return;
 
             // Get content type
@@ -180,39 +304,87 @@ namespace SharpityEditor.Content
                 return;
             }
 
-            // Write the content to disk
-            WriteContent(contentWriter, contentCachePath, contentType, content);
+            // Write the content to the database
+            WriteContentDB(contentWriter, contentInfo, content, contentType);
+
+            // Update database write time
+            contentInfo.LastWriteTimeUTC = timeStamp;
+            contentInfoDB.Update(contentInfo);
 
             // Check for no importer provided
             if (importer == null)
             {
                 // Get content importer
-                importer = GetContentImporter(contentPath);
+                importer = GetContentImporter(projectContentPath);
 
                 // Check for importer
                 if (importer == null)
                 {
-                    Debug.LogWarning("No importer available for content: " + contentPath);
+                    Debug.LogWarning("No importer available for content: " + projectContentPath);
                     return;
                 }
 
-                // Set importer guid
-                if(string.IsNullOrEmpty(importer.Guid) == true)
-                    importer.Guid = content.Guid;
+                // Update importer
+                importer.UpdateImporterFromContent(content);
             }
 
             // Write meta
-            WriteContentImporterMeta(importer, contentPath);
+            WriteContentImporterMeta(importer, importer.MetaPath);
+        }
+
+        public bool HasContent(string guid)
+        {
+            // Check for content with guid exists
+            return contentInfoDB.Exists(
+                Query.EQ(nameof(ContentInfo.Guid), guid));
+        }
+
+        public bool HasContent(GameElement content)
+        {
+            return HasContent(content.Guid);
+        }
+
+        public bool HasContentPath(string contentPath)
+        {
+            // Check relative path
+            CheckProjectContentRelativePath(contentPath);
+
+            // Check for exists
+            return contentInfoDB.Exists(
+                Query.EQ(nameof(ContentInfo.Path), contentPath));
         }
 
         public string GetContentGuid(string contentPath)
         {
-            // Check for content found
-            string guid;
-            if (pathContent.TryGetValue(contentPath, out guid) == false)
-                return null;
+            // Check relative path
+            CheckProjectContentRelativePath(contentPath);
 
-            return guid;
+            // Find the entry
+            ContentInfo result = contentInfoDB.FindOne(
+                Query.EQ(nameof(ContentInfo.Path), contentPath));
+
+            // Check for content found
+            if (result != null)
+                return result.Guid;
+
+            return null;
+        }
+
+        public string GetContentPath(string guid)
+        {
+            // Check for invalid guid
+            if (string.IsNullOrEmpty(guid) == true)
+                throw new ArgumentException("Guid cannot be null or empty");
+
+            // Find the entry
+            ContentInfo result = contentInfoDB.FindOne(
+                Query.EQ(nameof(ContentInfo.Guid), guid));
+
+            // Check for content found
+            if (result != null)
+                return result.Path;
+
+            return null;
         }
 
         public string GetContentPath(GameElement content)
@@ -221,83 +393,26 @@ namespace SharpityEditor.Content
             if(content == null)
                 throw new ArgumentNullException(nameof(content));
 
-            // Get load path
-            ContentInfo info;
-            if (guidContent.TryGetValue(content.Guid, out info) == false)
-                return null;
-
-            // Get path
-            return info.ContentPath;
+            // Find by guid
+            return GetContentPath(content.Guid);
         }
 
         public string GetContentRelativePath(string contentPath)
         {
             // Get relative path
             string relativeContentPath = Path.GetRelativePath(projectPath, contentPath);
+            
+            // Normalize the path to use the standard convention - forward slash only
+            return NormalizeContentPath(relativeContentPath);
+        }
 
+        private string NormalizeContentPath(string contentPath)
+        {
             // Convert to forward slash
-            if (string.IsNullOrEmpty(relativeContentPath) == false)
-                relativeContentPath = relativeContentPath.Replace('\\', '/');
+            if (string.IsNullOrEmpty(contentPath) == false)
+                contentPath = contentPath.Replace('\\', '/');
 
-            return relativeContentPath;
-        }
-
-        public void CreateContent(string contentPath, GameElement content)
-        {
-            // Check for null
-            if(content == null)
-                throw new ArgumentNullException(nameof(content));
-
-            // Check relative path
-            contentPath = CheckProjectContentRelativePath(contentPath);
-        }
-
-        public GameElement ImportContent(string contentPath)
-        {
-            // Store relative path
-            string contentRelativePath = contentPath;
-
-            // Check relative path
-            contentPath = CheckProjectContentRelativePath(contentPath);
-
-            // Check for file exists
-            if (File.Exists(contentPath) == false)
-                throw new ArgumentException("Content path does not exist");
-
-            // Get content importer
-            ContentImporter importer = GetContentImporter(contentPath);
-
-            // Check for importer
-            if(importer == null)
-            {
-                Debug.LogWarning("No importer available for content: " + contentPath);
-                return null;
-            }
-
-            // Import the content file
-            GameElement result = ReadContent(importer, contentPath, importer.Guid);
-
-            // Apply guid
-            if (string.IsNullOrEmpty(importer.Guid) == true)
-                importer.Guid = result.Guid;
-
-            // Get time stamp of content file
-            long timeStamp = File.GetLastWriteTimeUtc(contentPath).Ticks;
-
-            // Create content entry
-            guidContent[importer.Guid] = new ContentInfo
-            {
-                ContentGuid = importer.Guid,
-                ContentPath = contentRelativePath,
-                ContentExtension = Path.GetExtension(contentRelativePath),
-                LastWriteTime = timeStamp,
-            };
-            pathContent[contentRelativePath] = importer.Guid;
-
-            // Cache the content
-            SaveCachedContent(contentPath, result, timeStamp, importer);
-
-            return result;
+            return contentPath;
         }
 
         public T GetContentImporter<T>(string contentPath) where T : ContentImporter
@@ -331,6 +446,56 @@ namespace SharpityEditor.Content
             return importer;
         }
 
+        private ContentInfo RegisterOrUpdateContentDB(string contentPath, string guid, string type)
+        {
+            // Check for exists
+            if(HasContent(guid) == true)
+            {
+                // Find the entry
+                ContentInfo result = contentInfoDB.FindOne(
+                    Query.EQ(nameof(ContentInfo.Guid), guid));
+
+                // Get the folder
+                string folderPath = Directory.GetParent(contentPath).FullName;
+
+                // Make relative
+                string folderPathRelative = GetContentRelativePath(folderPath);
+
+                // Update the entry
+                result.Update(contentPath, folderPathRelative, type);
+
+                // Update database
+                contentInfoDB.Update(result);
+
+                return result;
+            }
+            else
+            {
+                // Register new content
+                return RegisterContentDB(contentPath, guid, type);
+            }
+        }
+
+        private ContentInfo RegisterContentDB(string contentPath, string guid, string type)
+        {
+            // Get the folder
+            string folderPath = Directory.GetParent(contentPath).FullName;
+
+            // Make relative
+            string folderPathRelative = GetContentRelativePath(folderPath);
+
+            // Create content info
+            ContentInfo info = new ContentInfo(contentPath, folderPathRelative, guid, type);
+
+            // Make sure index is unique
+            contentInfoDB.EnsureIndex(nameof(ContentInfo.Guid), true);
+
+            // Register with db
+            contentInfoDB.Insert(info);
+
+            return info;
+        }
+
         private void ReadContentImporterMeta(ContentImporter importer, string contentPath, bool createMeta = true)
         {
             // Check for null
@@ -339,6 +504,9 @@ namespace SharpityEditor.Content
 
             // Check for meta file
             string metaFullPath = Path.ChangeExtension(contentPath, metaExtension);
+
+            // Update importer path
+            importer.MetaPath = metaFullPath;
 
             // Check for meta file
             if (File.Exists(metaFullPath) == true)
@@ -398,7 +566,7 @@ namespace SharpityEditor.Content
             return Path.Combine(projectPath, contentPath);
         }
 
-        private string CheckProjectContentRelativePath(string contentPath)
+        private void CheckProjectContentRelativePath(string contentPath)
         {
             // Check for invalid
             if (string.IsNullOrEmpty(contentPath) == true)
@@ -408,14 +576,9 @@ namespace SharpityEditor.Content
             if (Path.IsPathRooted(contentPath) == true)
                 throw new ArgumentException("Content path must be relative to the project folder");
 
-            // Get full path
-            string fullPath = Path.Combine(projectPath, contentPath);
-
-            // Check for separator
-            if (Path.DirectorySeparatorChar == '\\')
-                fullPath = fullPath.Replace('/', '\\');
-
-            return fullPath;
+            // Check for windows separator
+            if (contentPath.Contains('\\') == true)
+                throw new ArgumentException("Content path must use '/' forward separators");
         }
 
         private GameElement ReadContent(IContentReader reader, string contentPath, string guid = "")
@@ -448,6 +611,23 @@ namespace SharpityEditor.Content
 
                 // Write file
                 writer.WriteContentAsync(content, stream, context, default);
+            }
+        }
+
+        private void WriteContentDB(IContentWriter writer, ContentInfo contentInfo, GameElement content, Type contentType)
+        {
+            // Open cache file
+            using (MemoryStream stream = new MemoryStream())
+            {
+                // Create context
+                IContentWriter.ContentWriteContext context = new IContentWriter.ContentWriteContext(
+                    contentType, this, null, content.Guid, projectContentPath);
+
+                // Write file
+                writer.WriteContentAsync(content, stream, context, default);
+
+                // Upload to storage
+                contentDataDB.Upload(content.Guid, projectContentPath, stream);
             }
         }
 

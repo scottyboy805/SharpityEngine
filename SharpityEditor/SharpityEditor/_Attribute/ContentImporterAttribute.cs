@@ -1,5 +1,5 @@
 ﻿
-namespace SharpityEditor._Attribute
+namespace SharpityEditor
 {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
     public sealed class ContentImporterAttribute : Attribute

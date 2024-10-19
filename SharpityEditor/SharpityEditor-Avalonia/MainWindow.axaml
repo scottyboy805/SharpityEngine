@@ -1,0 +1,24 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="NP.Demos.DefaultLayoutSaveDemo.MainWindow"
+        Title="NP.Demos.UsingViewModelsDemo"
+        xmlns:np="https://np.com/visuals"
+        np:DockAttachedProperties.TheDockManager="{DynamicResource TheDockManager}"
+        Width="1280"
+        Height="720">
+	<Window.Resources>
+		<!-- Define the dock manager-->
+		<np:DockManager x:Key="TheDockManager"/>
+	</Window.Resources>
+	<Grid RowDefinitions="Auto, *, Auto"
+		  Margin="5">
+		<!-- top level group should reference the dock manager-->
+		<np:RootDockGroup TheDockManager="{StaticResource TheDockManager}"
+						  Grid.Row="1">
+			<np:StackDockGroup TheOrientation="Vertical">
+				<np:StackDockGroup IsStableGroup="True" TheOrientation="Horizontal" DockId="Main"/>
+				<np:StackDockGroup IsStableGroup="True" TheOrientation="Horizontal" DockId="Bottom"/>
+			</np:StackDockGroup>
+		</np:RootDockGroup>
+	</Grid>
+</Window>

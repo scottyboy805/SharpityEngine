@@ -531,7 +531,7 @@ namespace SharpityEngine.Content
             return contentPathCache.ContainsKey(contentPathOrGuid);
         }
 
-        public void Dispose()
+        public virtual void Dispose()
         {
             // Destroy all elements
             //foreach(GameElement element in contentPathCache.Values)
