@@ -8,6 +8,7 @@
     <Nullable>disable</Nullable>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
+    <AssemblyName>Player</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
