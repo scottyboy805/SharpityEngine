@@ -4,8 +4,6 @@ using SharpityEngine.Graphics;
 using System.Diagnostics;
 using System.Numerics;
 using SharpityEngine.Graphics.Context;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 using SharpityEngine.Content;
 using Vector3 = SharpityEngine.Vector3;
 using SharpityEngine;

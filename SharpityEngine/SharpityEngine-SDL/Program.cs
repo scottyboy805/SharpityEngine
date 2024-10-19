@@ -2,8 +2,8 @@
 using SharpityEngine_SDL;
 
 // Create and run game with SDL2 platform
-//new SDL2_GamePlatform(
-//    new FileContentProvider("Content"))
-//    .RunAsync(args);
+new SDL2_GamePlatform(
+    new FileContentProvider("Content"))
+    .RunAsync(args);
 
-TestIsolatedRendering.MainTest(args);
+//TestIsolatedRendering.MainTest(args);

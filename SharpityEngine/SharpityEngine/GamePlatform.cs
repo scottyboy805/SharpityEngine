@@ -3,7 +3,7 @@ using SharpityEngine.Graphics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("SharpityEngine-SDL")]
+[assembly: InternalsVisibleTo("DesktopSDL")]
 
 namespace SharpityEngine
 {
