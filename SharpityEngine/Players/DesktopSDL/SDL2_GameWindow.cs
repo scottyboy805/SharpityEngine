@@ -3,7 +3,7 @@ using SharpityEngine;
 using SharpityEngine.Graphics.Context;
 using System.Diagnostics;
 
-namespace SharpityEngine_SDL
+namespace SharpityEngine.Player
 {
     internal sealed class SDL2_GameWindow : GameWindow, IGraphicsContext_WindowsNative
     {

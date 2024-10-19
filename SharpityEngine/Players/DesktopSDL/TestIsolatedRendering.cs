@@ -11,7 +11,7 @@ using SharpityEngine.Scene;
 using Vector4 = SharpityEngine.Vector4;
 using Vector2 = SharpityEngine.Vector2;
 
-namespace SharpityEngine_SDL
+namespace SharpityEngine.Player
 {
     internal class TestIsolatedRendering
     {

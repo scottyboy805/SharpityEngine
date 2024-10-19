@@ -2,7 +2,7 @@
 using SharpityEngine.Graphics;
 using SharpityEngine.Graphics.Pipeline;
 
-namespace SharpityEngine_SDL
+namespace SharpityEngine.Player
 {
     internal class TestRendering : IGameModule
     {

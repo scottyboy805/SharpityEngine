@@ -3,7 +3,7 @@ using SharpityEngine;
 using SharpityEngine.Content;
 using SharpityEngine.Graphics;
 
-namespace SharpityEngine_SDL
+namespace SharpityEngine.Player
 {
     internal sealed class SDL2_GamePlatform : GamePlatform
     {

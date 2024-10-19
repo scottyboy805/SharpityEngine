@@ -5,7 +5,7 @@ VisualStudioVersion = 17.7.34221.43
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharpityEngine", "SharpityEngine\SharpityEngine.csproj", "{DA56C0C4-06BD-4B9B-8978-2BCE73B6C5FB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DesktopSDL", "SharpityEngine-SDL\DesktopSDL.csproj", "{7A8380AD-2BBA-45E8-BC82-D99543238956}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DesktopSDL", "Players\DesktopSDL\DesktopSDL.csproj", "{7A8380AD-2BBA-45E8-BC82-D99543238956}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Players", "Players", "{5CDF06B3-F8F4-4411-A6E5-BF829C040EEF}"
 EndProject
