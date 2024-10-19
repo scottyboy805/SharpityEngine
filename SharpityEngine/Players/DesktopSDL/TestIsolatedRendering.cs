@@ -65,7 +65,7 @@ namespace SharpityEngine.Player
             GraphicsDevice device = adapter.RequestDeviceAsync().Result;
 
 
-            FileContentProvider content = new FileContentProvider(Environment.CurrentDirectory);
+            FileContentProvider content = new FileContentProvider("../../../../../../Content");// Environment.CurrentDirectory);
             SharpityEngine.Game game = new SDL2_Game(new SharpityEngine.TypeManager(), new SDL2_GamePlatform(content), null, surface, adapter, device);
             
 
@@ -90,19 +90,19 @@ namespace SharpityEngine.Player
             GraphicsBuffer uniformBuffer = device.CreateBuffer(sizeof(UniformBuffer), BufferUsage.Uniform | BufferUsage.CopyDst);
 
             // Load texture content
-            Texture texture = content.Load<Texture>("Resources/WGPU-Logo.png");
+            Texture texture = content.Load<Texture>("WGPU-Logo.png");
 
             // Load mesh content
-            Mesh cubeMesh = content.Load<Mesh>("Resources/Cube.fbx");
+            Mesh cubeMesh = content.Load<Mesh>("Cube.fbx");
             vertexBuffer = cubeMesh.SubMeshes[0].vertexBuffer;
 
             // Sampler
             Sampler sampler = device.CreateSampler(WrapMode.ClampToEdge, FilterMode.Linear);
 
             // Shader
-            Shader shader = device.CreateShaderSource(File.ReadAllText("shader.wgsl"));
+            Shader shader = device.CreateShaderSource(content.LoadDataText("shader.wgsl"));
 
-            Shader errorShader = device.CreateShaderSource(File.ReadAllText("Error.wgsl"));
+            Shader errorShader = device.CreateShaderSource(content.LoadDataText("Error.wgsl"));
 
             // Material
             Material material = new Material(shader);
@@ -134,8 +134,6 @@ namespace SharpityEngine.Player
             Span<UniformBuffer> uniformBufferSpan = stackalloc UniformBuffer[1];
 
 
-
-
             // ECS
             GameScene gameScene = new GameScene();
             Game.Current.GameModules.AddModule(gameScene);
@@ -143,7 +141,7 @@ namespace SharpityEngine.Player
             GameObject gameObject = gameScene.CreateEmptyObject("Cube");
             MeshRenderer meshRenderer = gameObject.CreateComponent<MeshRenderer>();
             meshRenderer.Mesh = cubeMesh;
-            meshRenderer.Material = errorMaterial;// material;
+            meshRenderer.Material = material;// errorMaterial;// material;
 
             GameObject cameraObject = gameScene.CreateEmptyObject("Camera");
             Camera camera = cameraObject.CreateComponent<Camera>();
