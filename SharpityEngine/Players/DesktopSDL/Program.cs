@@ -8,8 +8,8 @@ string contentPath = "Content";
 #endif
 
 // Create and run game with SDL2 platform
-//new SDL2_GamePlatform(
-//    new FileContentProvider(contentPath))
-//    .RunAsync(args);
+new SDL2_GamePlatform(
+    new FileContentProvider(contentPath))
+    .RunAsync(args);
 
-TestIsolatedRendering.MainTest(args);
+//TestIsolatedRendering.MainTest(args);

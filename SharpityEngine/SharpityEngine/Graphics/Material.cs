@@ -12,10 +12,11 @@ namespace SharpityEngine.Graphics
         // Private
         [DataMember(Name = "Shader")]
         private Shader shader = null;
+        [DataMember(Name = "Bindings")]
         private unsafe BindData[] bindingData =
         {
-            BindData.Buffer(null, 0, 0, sizeof(Matrix4)),
-            BindData.Sampler(null, 1),
+            BindData.Buffer(0, 0, sizeof(Matrix4)),
+            BindData.Sampler(1),
             BindData.Texture(null, 2),
         };
 
@@ -85,10 +86,10 @@ namespace SharpityEngine.Graphics
             bindingData[slot] = BindData.Sampler(sampler, slot);
         }
 
-        public void SetTextureView(TextureView textureView, int slot)
+        public void SetTexture(Texture texture, int slot)
         {
             // Create texture
-            bindingData[slot] = BindData.Texture(textureView, slot);
+            bindingData[slot] = BindData.Texture(texture, slot);
         }
 
         public void Apply()

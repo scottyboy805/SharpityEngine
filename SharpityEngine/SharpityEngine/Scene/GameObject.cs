@@ -103,6 +103,11 @@ namespace SharpityEngine
         }
 
         // Constructor
+        private GameObject()
+        {
+            this.transform = new Transform(this);
+        }
+
         internal GameObject(string name = null)
             : base(name)
         {
@@ -499,6 +504,32 @@ namespace SharpityEngine
 
 
         #region HierarchyEvents
+        internal static void DoGameObjectSceneInitialize(GameObject gameObject, GameScene scene)
+        {
+            // Check for null
+            if(gameObject != null)
+            {
+                // Update scene
+                gameObject.scene = scene;
+
+                // Check for children
+                if (gameObject.Transform.HasChildren == true)
+                {
+                    // Update children
+                    foreach (Transform child in gameObject.Transform.Children)
+                        DoGameObjectSceneInitialize(child.GameObject, scene);
+                }
+
+                // Check for components
+                if (gameObject.components != null)
+                {
+                    // Update components
+                    foreach (Component component in gameObject.components)
+                        Component.DoComponentSceneInitialize(component, gameObject);
+                }
+            }
+        }
+
         internal static void DoGameObjectEnabledEvents(GameObject gameObject, bool enabled, bool forceUpdate = false)
         {
             // Store current enabled state

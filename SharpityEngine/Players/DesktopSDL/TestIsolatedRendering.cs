@@ -1,15 +1,9 @@
 ﻿using SDL2;
-using SharpityEngine.Graphics.Pipeline;
-using SharpityEngine.Graphics;
-using System.Diagnostics;
-using System.Numerics;
-using SharpityEngine.Graphics.Context;
 using SharpityEngine.Content;
-using Vector3 = SharpityEngine.Vector3;
-using SharpityEngine;
+using SharpityEngine.Graphics;
+using SharpityEngine.Graphics.Context;
+using SharpityEngine.Graphics.Pipeline;
 using SharpityEngine.Scene;
-using Vector4 = SharpityEngine.Vector4;
-using Vector2 = SharpityEngine.Vector2;
 
 namespace SharpityEngine.Player
 {
@@ -109,13 +103,13 @@ namespace SharpityEngine.Player
 
             material.SetBuffer(uniformBuffer, 0);
             material.SetSampler(sampler, 1);
-            material.SetTextureView(texture.CreateView(), 2);
+            material.SetTexture(texture, 2);
             material.Apply();
 
             Material errorMaterial = new Material(errorShader);
             errorMaterial.SetBuffer(uniformBuffer, 0);
             errorMaterial.SetSampler(sampler, 1);
-            errorMaterial.SetTextureView(texture.CreateView(), 2);
+            errorMaterial.SetTexture(texture, 2);
             errorMaterial.Apply();
 
             TextureFormat swapChainFormat = surface.GetPreferredFormat(adapter);

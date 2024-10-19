@@ -1,5 +1,6 @@
 ﻿using SharpityEngine.Graphics.Pipeline;
 using System.Runtime.Serialization;
+using System.Xml.Linq;
 using WGPU.NET;
 
 namespace SharpityEngine.Graphics
@@ -112,17 +113,18 @@ namespace SharpityEngine.Graphics
         }
 
         // Constructor
+        private Shader() { }
+
         internal Shader(Wgpu.DeviceImpl wgpuDevice, string name = null)
             : base(name)
         {
             this.wgpuDevice = wgpuDevice;
         }
 
-        internal Shader(Wgpu.DeviceImpl wgpuDevice, Wgpu.ShaderModuleImpl wgpuShader, string shaderSource, string name = null)
+        internal Shader(Wgpu.DeviceImpl wgpuDevice, string shaderSource, string name = null)
             : base(shaderSource, name)
         {
             this.wgpuDevice = wgpuDevice;
-            this.wgpuShader = wgpuShader;
 
             // Trigger loaded
             OnAfterLoaded();
@@ -164,6 +166,30 @@ namespace SharpityEngine.Graphics
 
         private void CreateRenderPipeline()
         {
+            // Get device
+            if (wgpuDevice.Handle == IntPtr.Zero)
+                wgpuDevice = Game.GraphicsDevice.wgpuDevice;
+
+            // Create desc
+            Wgpu.ShaderModuleDescriptor wgpuShaderDesc = new Wgpu.ShaderModuleDescriptor
+            {
+                label = Name,
+                nextInChain = new WgpuStructChain()
+                    .AddShaderModuleWGSLDescriptor(GetText())
+                    .GetPointer(),
+            };
+
+            // Create shader
+            wgpuShader = Wgpu.DeviceCreateShaderModule(wgpuDevice, wgpuShaderDesc);
+
+            // Check for error
+            if (wgpuShader.Handle == IntPtr.Zero)
+            {
+                Debug.LogError(LogFilter.Graphics, "Error creating shader: " + Name);
+                return;
+            }
+
+
             // Get surface format
             TextureFormat surfaceFormat = Game.GraphicsSurface.GetPreferredFormat(Game.GraphicsAdapter);
 

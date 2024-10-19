@@ -72,6 +72,14 @@ namespace SharpityEngine
 
 
         #region HierarchyEvents
+        internal static void DoComponentSceneInitialize(Component component, GameObject gameObject)
+        {
+            if(component != null)
+            {
+                component.gameObject = gameObject;
+            }
+        }
+
         internal static void DoComponentEnabledEvents(Component component, bool enabled, bool forceUpdate = false)
         {
             // Store current enabled state

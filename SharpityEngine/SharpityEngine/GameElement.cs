@@ -128,6 +128,8 @@ namespace SharpityEngine
         //}
 
         // Constructor
+        private GameElement() : this(null) { }
+
         protected GameElement(string name = null)
         {
             this.name = name;

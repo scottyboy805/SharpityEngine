@@ -79,6 +79,11 @@ namespace SharpityEngine
             }
         }
 
+        public bool HasModule(IGameModule module)
+        {
+            return modules != null && module != null && modules.Contains(module) == true;
+        }
+
         public T[] GetModulesOfType<T>() where T : IGameModule
         {
             List<T> results = new List<T>();

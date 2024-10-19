@@ -73,14 +73,10 @@ namespace SharpityEngine.Content.Readers
             // Get result
             object result = null;
 
-            // Check for hint type
-            if(context.HintType != null)
+            // Check for mesh or not specified
+            if (context.HintType == null || context.HintType == typeof(Graphics.Mesh))
             {
-                // Check for mesh
-                if (context.HintType == typeof(Graphics.Mesh))
-                {
-                    result = AssimpMeshElementContentReader.ImportContentAsSingleMesh(scene);
-                }
+                result = AssimpMeshElementContentReader.ImportContentAsSingleMesh(scene);
             }
 
             // Check for loaded

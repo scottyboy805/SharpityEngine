@@ -1,0 +1,10 @@
+{
+	"Type": "SharpityEngine.GameSettings",
+	"CompanyName": "Default Company",
+	"PreferredScreenWidth": 1280,
+	"PreferredScreenHeight" : 720,
+	"PreferredFullscreen": false,
+	"StartupScenes": [
+		"Scene/TestScene"
+	]
+}

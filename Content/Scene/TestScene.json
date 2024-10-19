@@ -1,0 +1,25 @@
+{
+	"Type": "SharpityEngine.Scene.GameScene",
+	"GameObjects": [
+		{
+			"Type": "SharpityEngine.GameObject",
+			"Name": "Main Camera",
+			"Components": [
+				{
+					"Type": "SharpityEngine.Camera",
+				},
+				{
+					"Type": "SharpityEngine.MeshRenderer",
+					"Mesh": {
+						"AssetRef": "Cube.fbx"
+					},
+					"Materials": [
+						{
+							"AssetRef": "Material.json"
+						}
+					]
+				}
+			]
+		}
+	]
+}

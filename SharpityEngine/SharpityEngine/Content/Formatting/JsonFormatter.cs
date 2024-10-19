@@ -6,19 +6,23 @@ namespace SharpityEngine.Content
     {
         // Types
         [DataContract]
-        protected class ExternalFileReference
+        protected class AssetReference
         {
             // Public
-            [DataMember(Name = "ReferenceFile")]
-            public string referenceFile;
+            public const string AssetRefName = "AssetRef";
+
+            [DataMember(Name = AssetRefName)]
+            public string assetReference;
         }
 
         [DataContract]
-        protected class ExternalGuidReference
+        protected class DataReference
         {
             // Public
-            [DataMember(Name = "ReferenceGuid")]
-            public string referenceGuid;
+            public const string DataRefName = "DataRef";
+
+            [DataMember(Name = DataRefName)]
+            public string dataReference;
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿using SharpityEngine.Graphics;
 using System.Runtime.Serialization;
 
-namespace SharpityEngine.Scene
+namespace SharpityEngine
 {
     public abstract class Renderer : Component, IGameDraw
     {

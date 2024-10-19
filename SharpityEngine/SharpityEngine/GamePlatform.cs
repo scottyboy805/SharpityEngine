@@ -58,7 +58,7 @@ namespace SharpityEngine
 
             // Load settings
             Debug.Log(LogFilter.Content, "Load game settings...");
-            GameSettings gameSettings = new GameSettings();// await contentProvider.LoadAsync<GameSettings>("GameSettings.json");
+            GameSettings gameSettings = await contentProvider.LoadAsync<GameSettings>("GameSettings.json");
 
             // Check for settings
             if (gameSettings == null)
@@ -96,19 +96,19 @@ namespace SharpityEngine
             }
 #endif
 
-            //// Preload bundles
-            //Debug.LogF(LogFilter.Content, "Preloading bundles ({0})...", gameSettings.PreloadBundles.Count);
-            //foreach (string content in gameSettings.PreloadBundles)
-            //{
-            //    contentProvider.LoadBundle(content);
-            //}
+            // Preload bundles
+            Debug.LogF(LogFilter.Content, "Preloading bundles ({0})...", gameSettings.PreloadBundles.Count);
+            foreach (string content in gameSettings.PreloadBundles)
+            {
+                contentProvider.LoadBundle(content);
+            }
 
-            //// Preload content
-            //Debug.LogF(LogFilter.Content, "Preloading content ({0})...", gameSettings.PreloadContent.Count);
-            //foreach (string content in gameSettings.PreloadContent)
-            //{
-            //    contentProvider.Load(content);
-            //}
+            // Preload content
+            Debug.LogF(LogFilter.Content, "Preloading content ({0})...", gameSettings.PreloadContent.Count);
+            foreach (string content in gameSettings.PreloadContent)
+            {
+                contentProvider.Load(content);
+            }
 
 
             //// Preload bundles
@@ -159,6 +159,13 @@ namespace SharpityEngine
 
             // Create the game provider
             game = CreateGame(window, surface, adapter, device);
+
+            // Preload scenes
+            Debug.LogF(LogFilter.Content, "Loading startup scenes ({0})...", gameSettings.StartupScenes.Count);
+            foreach (string scene in gameSettings.StartupScenes)
+            {
+                contentProvider.LoadScene(scene);
+            }
 
             // Initialize the game
             game.DoGameInitialize();

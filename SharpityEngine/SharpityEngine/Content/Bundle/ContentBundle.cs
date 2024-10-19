@@ -250,7 +250,7 @@ namespace SharpityEngine.Content
 
             // Create asset index
             ContentBundleAssetIndex index = null;
-
+            
             // Create loader
             JsonDeserializeFormatter formatter = new JsonDeserializeFormatter(new IContentReader.ContentReadContext(
                 null, context.ContentProvider, bundle, null, "Assets.index"));

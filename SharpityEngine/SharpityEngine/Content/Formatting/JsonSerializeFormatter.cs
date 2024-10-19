@@ -83,12 +83,12 @@ namespace SharpityEngine.Content
                         // Check for an external asset which must be referenced by file
                         if (localInstanceCache.Contains((GameElement)value) == false)
                         {
-                            SerializeNestedObject(writer, new ExternalFileReference { referenceFile = ((GameElement)value).ContentPath }, typeof(ExternalFileReference), useRemoteFields);
+                            SerializeNestedObject(writer, new AssetReference { assetReference = ((GameElement)value).ContentPath }, typeof(AssetReference), useRemoteFields);
                         }
                         // Check for an internal asset which must be reference by guid to avoid infinite load cycle
                         else
                         {
-                            SerializeNestedObject(writer, new ExternalGuidReference { referenceGuid = ((GameElement)value).Guid }, typeof(ExternalGuidReference), useRemoteFields);
+                            SerializeNestedObject(writer, new AssetReference { assetReference = ((GameElement)value).Guid }, typeof(AssetReference), useRemoteFields);
                         }
                         return;
                     }

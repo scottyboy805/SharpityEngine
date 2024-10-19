@@ -1,21 +1,29 @@
-﻿using WGPU.NET;
+﻿using System.Runtime.Serialization;
+using WGPU.NET;
 
 namespace SharpityEngine.Graphics.Pipeline
 {
+    [DataContract]
     public abstract class BindData
     {
         // Type
+        [DataContract]
         internal sealed class BufferBindData : BindData
         {
-            // Private
-            private GraphicsBuffer buffer = null;
+            // Private            
+            [DataMember(Name = "Usage")]
+            private BufferUsage usage = BufferUsage.Uniform | BufferUsage.CopyDst;
+            [DataMember(Name = "Offset")]
             private long offset = 0;
+            [DataMember(Name = "Size")]
             private long size = 0;
 
+            private GraphicsBuffer buffer = null;
+
             // Properties
-            public GraphicsBuffer Buffer
+            public BufferUsage Usage
             {
-                get { return buffer; }
+                get { return usage; }
             }
 
             public long Offset
@@ -28,13 +36,36 @@ namespace SharpityEngine.Graphics.Pipeline
                 get { return size; }
             }
 
+            public new GraphicsBuffer Buffer
+            {
+                get 
+                {
+                    // Create buffer on demand
+                    if (buffer == null && Device != null)
+                        buffer = Device.CreateBuffer(size, usage);
+
+                    return buffer; 
+                }
+            }
+
             // Constructor
-            public BufferBindData(GraphicsBuffer buffer, int bindSlot, long offset, long size)
+            private BufferBindData() { }
+
+            public BufferBindData(int bindSlot, long offset = 0, long size = -1, BufferUsage usage = BufferUsage.Uniform | BufferUsage.CopyDst)
                 : base(bindSlot)
             {
-                this.buffer = buffer;
+                this.usage = usage;
                 this.offset = offset;
-                this.size = size;
+                this.size = size < 0 ? buffer.SizeInBytes : size;
+            }
+
+            public BufferBindData(GraphicsBuffer buffer, int bindSlot, long offset = 0, long size = -1)
+                : base(bindSlot)
+            {                
+                this.buffer = buffer;
+                this.usage = buffer.Usage;
+                this.offset = offset;
+                this.size = size < 0 ? buffer.SizeInBytes : size;
             }
 
             // Methods
@@ -45,23 +76,60 @@ namespace SharpityEngine.Graphics.Pipeline
                     binding = (uint)BindingSlot,
                     offset = (ulong)Offset,
                     size = (ulong)Size,
-                    buffer = buffer != null ? buffer.wgpuBuffer : default,
+                    buffer = Buffer != null ? Buffer.wgpuBuffer : default,
                 };
             }
         }
 
+        [DataContract]
         internal sealed class SamplerBindData : BindData
         {
             // Private
+            [DataMember(Name = "Wrap")]
+            private WrapMode wrapMode = WrapMode.ClampToEdge;
+            [DataMember(Name = "Filter")]
+            private FilterMode filterMode = FilterMode.Linear;
+
             private Sampler sampler = null;
 
             // Properties
-            public Sampler Sampler
+            public WrapMode WrapMode
             {
-                get { return sampler; }
+                get { return wrapMode; }
+            }
+
+            public FilterMode FilterMode
+            {
+                get { return filterMode; }
+            }
+
+            public new Sampler Sampler
+            {
+                get 
+                {
+                    // Create sample on demand
+                    if (sampler == null && Device != null)
+                        sampler = Device.CreateSampler(wrapMode, filterMode);
+
+                    return sampler; 
+                }
             }
 
             // Constructor
+            private SamplerBindData() { }
+
+            public SamplerBindData(int bindSlot)
+                : base(bindSlot)
+            {
+            }
+
+            public SamplerBindData(int bindSlot, WrapMode wrapMode, FilterMode filterMode)
+                : base(bindSlot)
+            {
+                this.wrapMode = wrapMode;
+                this.filterMode = filterMode;
+            }
+
             public SamplerBindData(Sampler sampler, int bindSlot)
                 : base(bindSlot)
             {
@@ -74,7 +142,7 @@ namespace SharpityEngine.Graphics.Pipeline
                 return new Wgpu.BindGroupEntry
                 {
                     binding = (uint)BindingSlot,
-                    sampler = sampler != null ? sampler.wgpuSampler : default,
+                    sampler = Sampler != null ? Sampler.wgpuSampler : default,
                 };
             }
         }
@@ -82,19 +150,50 @@ namespace SharpityEngine.Graphics.Pipeline
         internal sealed class TextureBindData : BindData
         {
             // Private
+            [DataMember(Name = "Texture")]
+            private Texture texture = null;
+            [DataMember(Name = "Aspect")]
+            private TextureAspect aspect = TextureAspect.All;
+
             private TextureView textureView = null;
 
             // Properties
+            public new Texture Texture
+            {
+                get { return Texture; }
+            }
+
+            public TextureAspect Aspect
+            {
+                get { return aspect; }
+            }
+
             public TextureView TextureView
             {
-                get { return textureView; }
+                get 
+                {
+                    // Create view on demand
+                    if (textureView == null && texture != null)
+                        textureView = texture.CreateView(aspect);
+
+                    return textureView; 
+                }
             }
 
             // Constructor
-            public TextureBindData(TextureView textureView, int bindSlot)
+            private TextureBindData() { }
+
+            public TextureBindData(int bindSlot, TextureAspect aspect = TextureAspect.All)
                 : base(bindSlot)
             {
-                this.textureView = textureView;
+                this.aspect = aspect;
+            }
+
+            public TextureBindData(Texture texture, int bindSlot, TextureAspect aspect = TextureAspect.All)
+                : base(bindSlot)
+            {
+                this.texture = texture;
+                this.aspect = aspect;
             }
 
             // Methods
@@ -103,18 +202,24 @@ namespace SharpityEngine.Graphics.Pipeline
                 return new Wgpu.BindGroupEntry
                 {
                     binding = (uint)BindingSlot,
-                    textureView = textureView != null ? textureView.wgpuTextureView : default,
+                    textureView = TextureView != null ? TextureView.wgpuTextureView : default,
                 };
             }
         }
 
         // Private
+        [DataMember(Name = "Slot")]
         private int bindingSlot = 0;        
 
         // Properties
         public int BindingSlot
         {
             get { return bindingSlot; }
+        }
+
+        protected GraphicsDevice Device
+        {
+            get { return Game.Current != null ? Game.Current.GraphicsDevice : null; }
         }
 
         // Constructor
@@ -128,9 +233,19 @@ namespace SharpityEngine.Graphics.Pipeline
         // Methods
         internal abstract Wgpu.BindGroupEntry GetEntry();
 
+        public static BindData Buffer(int bindSlot, long offset, long size, BufferUsage usage = BufferUsage.Uniform | BufferUsage.CopyDst)
+        {
+            return new BufferBindData(bindSlot, offset, size, usage);
+        }
+
         public static BindData Buffer(GraphicsBuffer buffer, int bindSlot, long offset, long size)
         {
             return new BufferBindData(buffer, bindSlot, offset, size);
+        }
+
+        public static BindData Sampler(int bindSlot, WrapMode wrapMode = WrapMode.ClampToEdge, FilterMode filterMode = FilterMode.Linear)
+        {
+            return new SamplerBindData(bindSlot, wrapMode, filterMode);
         }
 
         public static BindData Sampler(Sampler sampler, int bindSlot)
@@ -138,9 +253,9 @@ namespace SharpityEngine.Graphics.Pipeline
             return new SamplerBindData(sampler, bindSlot);
         }
 
-        public static BindData Texture(TextureView textureView, int bindSlot)
+        public static BindData Texture(Texture texture, int bindSlot, TextureAspect aspect = TextureAspect.All)
         {
-            return new TextureBindData(textureView, bindSlot);
+            return new TextureBindData(texture, bindSlot, aspect);
         }
     }
 

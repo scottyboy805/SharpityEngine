@@ -1,7 +1,7 @@
 ﻿using SharpityEngine.Graphics;
 using System.Runtime.Serialization;
 
-namespace SharpityEngine.Scene
+namespace SharpityEngine
 {
     public enum ShadowMode
     {
@@ -68,7 +68,7 @@ namespace SharpityEngine.Scene
             for (int i = 0; i < subMeshCount; i++)
             {
                 // Get material
-                Material mat = materials.Length >= i ? materials[i] : null;
+                Material mat = i < materials.Length ? materials[i] : null;
 
                 // Get sub mesh
                 Mesh.SubMesh subMesh = mesh.SubMeshes[i];

@@ -52,7 +52,7 @@ namespace SharpityEngine
         // Properties
         public static IReadOnlyList<Camera> AllCameras
         {
-            get { return allActiveCameras; }
+            get { return allCameras; }
         }
 
         public static IReadOnlyList<Camera> AllActiveCameras

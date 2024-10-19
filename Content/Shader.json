@@ -1,0 +1,6 @@
+{
+	"Type": "SharpityEngine.Graphics.Shader",
+	"Data": {
+		"DataRef": "Shader.wgsl"
+	}
+}

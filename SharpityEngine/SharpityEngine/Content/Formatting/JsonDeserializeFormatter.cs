@@ -48,6 +48,8 @@ namespace SharpityEngine.Content
         public JsonDeserializeFormatter(IContentReader.ContentReadContext context)
         {
             this.context = context;
+            this.contentProvider = context.ContentProvider;
+            this.typeManager = context.ContentProvider.TypeManager;
         }
 #else
         public JsonDeserializeFormatter(TypeManager typeManager)
@@ -180,7 +182,7 @@ namespace SharpityEngine.Content
             if (token.Type == JTokenType.Null)
                 return null;
 
-            if (property.IsObject == true)
+            if (property.IsObject == true || token.Type == JTokenType.Object)
             {
                 // Check for enum
                 if (property.PropertyType.IsEnum == true)
@@ -260,9 +262,9 @@ namespace SharpityEngine.Content
             else
             {
                 // Check for reference
-                if (obj.ContainsKey("ReferenceFile") == true)
+                if (obj.ContainsKey(AssetReference.AssetRefName) == true)
                 {
-                    GameElement result = await contentProvider.LoadAsync((string)obj["ReferenceFile"]);
+                    GameElement result = await contentProvider.LoadAsync((string)obj[AssetReference.AssetRefName]);
 
                     // Try to convert
                     if (result != null)
@@ -273,68 +275,89 @@ namespace SharpityEngine.Content
                         // Check for read only and create instance
                         if (result.IsReadOnly == true || (result is GameAsset) == false)
                         {
-                            throw new NotImplementedException("Instantiate not implemented");
+                            
+                            //throw new NotImplementedException("Instantiate not implemented");
                             // = result.Instantiate(); // ISSUE HERE - Struct properties are not copied
                             result.isReadOnly = readOnly;
+
+                            // Check for asset
+                            if (result is GameAsset asset)
+                                asset.OnAfterLoaded();
                         }
 
-                        DataInstance instance = new DataInstance(result);
+                        DataInstance assetInstance = new DataInstance(result);
 
                         // Get the data contract
-                        DataContract contract = DataContract.ForType(result.GetType());
+                        DataContract assetContract = DataContract.ForType(result.GetType());
 
                         // Get properties
-                        IReadOnlyList<DataContractProperty> properties = contract.SerializeProperties;
+                        IReadOnlyList<DataContractProperty> assetProperties = assetContract.SerializeProperties;
 
                         // Check for remote properties
                         if (useRemoteFields == true)
-                            properties = contract.RemoteSerializeProperties;
+                            assetProperties = assetContract.RemoteSerializeProperties;
 
                         // Process all members
-                        foreach (DataContractProperty property in properties)
+                        foreach (DataContractProperty property in assetProperties)
                         {
-                            await DeserializeProperty(obj, property, instance, readOnly, useRemoteFields);
+                            await DeserializeProperty(obj, property, assetInstance, readOnly, useRemoteFields);
                         }
                     }
 
                     return result;
                 }
-                else if(obj.ContainsKey("ReferenceGuid") == true)
+                // May be a local guid reference
+                if(obj.ContainsKey(AssetReference.AssetRefName) == true)
                 {
                     // Create guid reference
-                    return new ExternalGuidReference { referenceGuid = (string)obj["ReferenceGuid"] };
+                    return new AssetReference { assetReference = (string)obj[AssetReference.AssetRefName] };
                 }
-                else
+
+                // Check for data reference
+                if(obj.ContainsKey(DataReference.DataRefName) == true)
                 {
-                    // Create non-GameElement instance
-                    DataInstance instance = new DataInstance();
-
-                    // Try to create instance of type
-                    if (CreateObjectInstance(elementType, out instance.obj) == false)
-                        return null;
-
-                    // Get the data contract
-                    DataContract contract = DataContract.ForType(elementType);
-
-                    // Get properties
-                    IReadOnlyList<DataContractProperty> properties = contract.SerializeProperties;
-
-                    // Check for remote properties
-                    if (useRemoteFields == true)
-                        properties = contract.RemoteSerializeProperties;
-
-                    // Process all members
-                    foreach (DataContractProperty property in properties)
+                    // Check for string
+                    if(elementType == typeof(string))
                     {
-                        await DeserializeProperty(obj, property, instance, readOnly, useRemoteFields);
+                        // Try to load the string
+                        return await contentProvider.LoadDataTextAsync((string)obj[DataReference.DataRefName]);
                     }
-
-                    // Register type instance - Important to do this after deserialize properties so that guid is correct
-                    if (instance.obj != null && instance.obj is GameElement)
-                        localInstanceCache[((GameElement)instance.obj).Guid] = (GameElement)instance.obj;
-
-                    return instance.obj;
+                    // Check for bytes
+                    else if(elementType == typeof(byte[]))
+                    {
+                        // Try to load the bytes
+                        return await contentProvider.LoadDataBytesAsync((string)obj.GetValue(DataReference.DataRefName));
+                    }
                 }
+
+                // Create non-GameElement instance
+                DataInstance instance = new DataInstance();
+
+                // Try to create instance of type
+                if (CreateObjectInstance(elementType, out instance.obj) == false)
+                    return null;
+
+                // Get the data contract
+                DataContract contract = DataContract.ForType(elementType);
+
+                // Get properties
+                IReadOnlyList<DataContractProperty> properties = contract.SerializeProperties;
+
+                // Check for remote properties
+                if (useRemoteFields == true)
+                    properties = contract.RemoteSerializeProperties;
+
+                // Process all members
+                foreach (DataContractProperty property in properties)
+                {
+                    await DeserializeProperty(obj, property, instance, readOnly, useRemoteFields);
+                }
+
+                // Register type instance - Important to do this after deserialize properties so that guid is correct
+                if (instance.obj != null && instance.obj is GameElement)
+                    localInstanceCache[((GameElement)instance.obj).Guid] = (GameElement)instance.obj;
+
+                return instance.obj;
             }
         }
 
@@ -362,7 +385,7 @@ namespace SharpityEngine.Content
                 array[i].SetInstanceValue(ref array, element);
             }
 
-            return array.GetInstanceWithoutNull();
+            return array.GetInstance();
         }
 
         private async Task DeserializeProperty(JObject obj, DataContractProperty property, DataInstance instance, bool readOnly, bool userRemoteFields)
@@ -386,13 +409,13 @@ namespace SharpityEngine.Content
 
         private object CheckLateBindingPropertyValue(object instance, DataContractProperty property, object value)
         {
-            if(value is ExternalGuidReference)
+            if(value is AssetReference assetRef && ContentProvider.IsGuid(assetRef.assetReference) == true)
             {
                 lateInstanceBindings.Add(new LateBindingGuidReference
                 {
                     instance = instance,
                     property = property,
-                    referenceGuid = ((ExternalGuidReference)value).referenceGuid,
+                    referenceGuid = ((AssetReference)value).assetReference,
                 });
 
                 // Value will be assigned at late binding stage

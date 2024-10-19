@@ -118,6 +118,9 @@ namespace SharpityEngine.Graphics
             {
 #if DEBUG
                 material = errorMaterial;
+
+                if (errorMaterial == null)
+                    return;
 #else
                 return;
 #endif

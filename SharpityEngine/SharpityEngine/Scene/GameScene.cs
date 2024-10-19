@@ -3,7 +3,7 @@ using System.Runtime.Serialization;
 
 namespace SharpityEngine.Scene
 {
-    public sealed class GameScene : GameAsset, IGameModule
+    public sealed class GameScene : GameAsset, IGameModule, IContentCallback
     {
         // Internal
         internal HashSet<IGameDraw> sceneDrawCalls = new HashSet<IGameDraw>();
@@ -43,6 +43,20 @@ namespace SharpityEngine.Scene
         }
 
         // Methods
+        public void Activate()
+        {
+            // Check for active
+            if (Game.GameModules.HasModule(this) == true)
+                throw new InvalidOperationException("Scene is already activated");
+
+            // Send initial enabled event
+            foreach (GameObject go in gameObjects)
+                GameObject.DoGameObjectEnabledEvents(go, go.Enabled, true);
+
+            // Add the module
+            Game.GameModules.AddModule(this);
+        }
+
         public void OnFrameStart() { }
         public void OnFrameEnd() { }
 
@@ -219,6 +233,16 @@ namespace SharpityEngine.Scene
 
             // Trigger enable
             GameObject.DoGameObjectEnabledEvents(go, true, true);
+        }
+
+        void IContentCallback.OnBeforeContentSave()
+        {
+        }
+
+        void IContentCallback.OnAfterContentLoad()
+        {
+            foreach (GameObject go in gameObjects)
+                GameObject.DoGameObjectSceneInitialize(go, this);
         }
         #endregion
     }

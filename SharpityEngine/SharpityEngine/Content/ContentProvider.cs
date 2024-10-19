@@ -122,8 +122,8 @@ namespace SharpityEngine.Content
             GameScene scene = Load<GameScene>(contentPathOrGuid, bundle);
 
             // Check for success
-            //if (scene != null && autoActivate == true)
-            //    scene.Activate();
+            if (scene != null && autoActivate == true)
+                scene.Activate();
 
             return scene;
         }
@@ -188,10 +188,6 @@ namespace SharpityEngine.Content
             // Start timing
             Stopwatch timer = Stopwatch.StartNew();
 
-            // Check for null type
-            if (type == null)
-                type = typeof(GameElement);
-
             // Get stream
             ContentReaderInfo readerInfo;
             Task<ContentReaderInfo> streamTask = GetReadContentStream(contentPathOrGuid, bundle, type);
@@ -216,10 +212,17 @@ namespace SharpityEngine.Content
                 // Check for error
                 if (readerInfo.Reader == null)
                     throw new NotSupportedException("No content reader for file format: " + contentPathOrGuid);
-                
-                // Check for game element reader - Block main thread during load
-                result = readerInfo.Reader.ReadContentAsync(GetRequiredContentStream(readerInfo.Stream, readerInfo.Reader), readerInfo.Context, default)
-                    .Result as GameElement;
+
+                try
+                {
+                    // Check for game element reader - Block main thread during load
+                    result = readerInfo.Reader.ReadContentAsync(GetRequiredContentStream(readerInfo.Stream, readerInfo.Reader), readerInfo.Context, default)
+                        .Result as GameElement;
+                }
+                catch(Exception e)
+                {
+                    Debug.LogException(e);
+                }
 
                 // Check for success
                 if (result != null)
@@ -228,7 +231,10 @@ namespace SharpityEngine.Content
                     result.ContentBundle = readerInfo.Context.ContainingBundle;
                 }
                 else
+                {
                     Debug.LogError(LogFilter.Content, "Could not load content: " + contentPathOrGuid);
+                    return null;
+                }
 
                 // Run load events
                 if (result is IContentCallback)
@@ -257,10 +263,6 @@ namespace SharpityEngine.Content
             // Start timing
             Stopwatch timer = Stopwatch.StartNew();
 
-            // Check for null type
-            if (type == null)
-                type = typeof(GameElement);
-
             // Get stream
             ContentReaderInfo readerInfo = await GetReadContentStream(contentPathOrGuid, bundle, type);
 
@@ -278,9 +280,16 @@ namespace SharpityEngine.Content
                 if (readerInfo.Reader == null)
                     throw new NotSupportedException("No content reader for file format: " + contentPathOrGuid);
 
-                // Check for game element importer
-                result = await readerInfo.Reader.ReadContentAsync(GetRequiredContentStream(readerInfo.Stream, readerInfo.Reader), readerInfo.Context, cancelToken) as GameElement;
-
+                try
+                {
+                    // Check for game element importer
+                    result = await readerInfo.Reader.ReadContentAsync(GetRequiredContentStream(readerInfo.Stream, readerInfo.Reader), readerInfo.Context, cancelToken)
+                        as GameElement;
+                }
+                catch(Exception e)
+                {
+                    Debug.LogException(e);
+                }
 
                 // Check for success
                 if (result != null)
@@ -289,7 +298,10 @@ namespace SharpityEngine.Content
                     result.ContentBundle = readerInfo.Context.ContainingBundle;
                 }
                 else
+                {
                     Debug.LogError(LogFilter.Content, "Could not load content: " + contentPathOrGuid);
+                    return null;
+                }
 
                 // Run load events
                 if (result is IContentCallback)

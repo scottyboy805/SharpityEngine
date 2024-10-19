@@ -281,24 +281,8 @@ namespace SharpityEngine.Graphics
 
         public Shader CreateShaderSource(string shaderSource, string name = null)
         {
-            // Create desc
-            Wgpu.ShaderModuleDescriptor wgpuShaderDesc = new Wgpu.ShaderModuleDescriptor
-            {
-                label = name,
-                nextInChain = new WgpuStructChain()
-                    .AddShaderModuleWGSLDescriptor(shaderSource)
-                    .GetPointer(),
-            };
-
-            // Create shader
-            Wgpu.ShaderModuleImpl wgpuShader = Wgpu.DeviceCreateShaderModule(wgpuDevice, wgpuShaderDesc);
-
-            // Check for error
-            if(wgpuShader.Handle == IntPtr.Zero) 
-                return null;
-
             // Get result
-            return new Shader(wgpuDevice, wgpuShader, shaderSource, name);
+            return new Shader(wgpuDevice, shaderSource, name);
         }
 
         public unsafe BindGroupLayout CreateBindGroupLayout(BindLayoutData[] layoutData, string label = null)

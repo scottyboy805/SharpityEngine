@@ -33,8 +33,6 @@ namespace SharpityEngine
         private int splashMinDisplayMilliseconds = 3000;
 
         // Startup info
-        [DataMember(Name = "GameMainType")]
-        private string gameMainType = "";
         [DataMember(Name = "GameAssemblies")]
         private List<string> gameAssemblies = new List<string>();
         [DataMember(Name = "PreloadBundles")]
@@ -93,11 +91,6 @@ namespace SharpityEngine
         public int SplashMinDisplayMilliseconds
         {
             get { return splashMinDisplayMilliseconds; }
-        }
-
-        public string GameMainType
-        {
-            get { return gameMainType; }
         }
 
         public IReadOnlyList<string> GameAssemblies

@@ -1,0 +1,24 @@
+{
+	"Type": "SharpityEngine.Graphics.Material",
+	"Shader": {
+		"AssetRef": "Shader.json"
+	},
+	"Bindings": [
+		{
+			"Type": "SharpityEngine.Graphics.Pipeline.BindData+BufferBindData",
+			"Size": 64,
+			"Slot": 0
+		},
+		{
+			"Type": "SharpityEngine.Graphics.Pipeline.BindData+SamplerBindData",
+			"Slot": 1
+		},
+		{
+			"Type": "SharpityEngine.Graphics.Pipeline.BindData+TextureBindData",
+			"Texture": {
+				"AssetRef": "WGPU-Logo.png"
+			},
+			"Slot": 2
+		}
+	]
+}

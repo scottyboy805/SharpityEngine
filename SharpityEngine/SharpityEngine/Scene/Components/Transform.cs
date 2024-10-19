@@ -29,6 +29,11 @@ namespace SharpityEngine
             get { return root; }
         }
 
+        public IReadOnlyList<Transform> Children
+        {
+            get { return children; }
+        }
+
         public bool IsRoot
         {
             get { return parent != null; }

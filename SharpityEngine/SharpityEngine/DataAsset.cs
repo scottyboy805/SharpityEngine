@@ -7,19 +7,12 @@ namespace SharpityEngine
     public class DataAsset : GameAsset
     {
         // Private
-        [DataMember(Name = "LoadOnDemand")]
-        private bool loadOnDemand = true;
         [DataMember(Name = "DataSize")]
         private long dataSize = 0;
-
-        private byte[] dataBytes = null;
+        [DataMember(Name = "Data")]
+        private string data = "";
 
         // Properties
-        public bool LoadOnDemand
-        {
-            get { return loadOnDemand; }
-        }
-
         public long DataSize
         {
             get { return dataSize; }
@@ -34,37 +27,31 @@ namespace SharpityEngine
         protected internal DataAsset(byte[] byteData, string name = null)
             : base(name)
         {
-            this.dataBytes = byteData;
+            this.data = Encoding.UTF8.GetString(byteData);
         }
 
         protected internal DataAsset(string textData, string name = null)
             : base(name)
         {
-            this.dataBytes = Encoding.UTF8.GetBytes(textData);
+            this.data = textData;
         }
 
         // Methods
-        protected override void OnLoaded()
+        public string GetText()
         {
-            // Check for load on demand
-            if (loadOnDemand == false)
-                GetBytesAsync();
+            // Get the data
+            if (data != null)
+                return data;
+
+            // Default to empty string
+            return string.Empty;
         }
 
-        public async Task<string> GetTextAsync()
+        public byte[] GetBytes()
         {
-            // Check for runtime created
-            if(dataBytes != null)
-                return Encoding.UTF8.GetString(dataBytes);
-
-            return null;
-        }
-
-        public async Task<byte[]> GetBytesAsync()
-        {
-            // Check for runtime created
-            if (dataBytes != null)
-                return dataBytes;
+            // Get the data decoded
+            if(data != null)
+                return Encoding.UTF8.GetBytes(data);
 
             return null;
         }
