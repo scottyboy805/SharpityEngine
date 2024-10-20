@@ -6,7 +6,10 @@
 			"Name": "Main Camera",
 			"Components": [
 				{
-					"Type": "SharpityEngine.Camera",
+					"Type": "SharpityEngine.Camera"
+				},
+				{
+					"Type": "TestGame.TestScript, TestGame"
 				}
 			]
 		},

@@ -98,6 +98,10 @@ namespace SharpityEngine.Content
                 // Do late binding
                 PerformLateBinding();
 
+                // Call loaded callback
+                if (instance is GameAsset loadedAsset)
+                    loadedAsset.OnAfterLoaded();
+
                 return instance;
             }
 
@@ -127,6 +131,10 @@ namespace SharpityEngine.Content
 
                 // Do late binding
                 PerformLateBinding();
+
+                // Call loaded callback
+                if (instance is GameAsset loadedAsset)
+                    loadedAsset.OnAfterLoaded();
 
                 return instance;
             }
@@ -257,6 +265,10 @@ namespace SharpityEngine.Content
                     localInstanceCache[((GameElement)instance.obj).Guid] = (GameElement)instance.obj;
                 }
 
+                // Trigger asset loaded callback
+                if (instance.obj is GameAsset loadedAsset)
+                    loadedAsset.OnAfterLoaded();
+
                 return instance.obj;
             }
             else
@@ -279,10 +291,6 @@ namespace SharpityEngine.Content
                             //throw new NotImplementedException("Instantiate not implemented");
                             // = result.Instantiate(); // ISSUE HERE - Struct properties are not copied
                             result.isReadOnly = readOnly;
-
-                            // Check for asset
-                            if (result is GameAsset asset)
-                                asset.OnAfterLoaded();
                         }
 
                         DataInstance assetInstance = new DataInstance(result);
@@ -303,6 +311,10 @@ namespace SharpityEngine.Content
                             await DeserializeProperty(obj, property, assetInstance, readOnly, useRemoteFields);
                         }
                     }
+
+                    // Trigger asset loaded callback
+                    if (result is GameAsset loadedAsset)
+                        loadedAsset.OnAfterLoaded();
 
                     return result;
                 }
@@ -356,6 +368,10 @@ namespace SharpityEngine.Content
                 // Register type instance - Important to do this after deserialize properties so that guid is correct
                 if (instance.obj != null && instance.obj is GameElement)
                     localInstanceCache[((GameElement)instance.obj).Guid] = (GameElement)instance.obj;
+
+                // Trigger asset loaded callback
+                if (instance.obj is GameAsset loadedAssetFinal)
+                    loadedAssetFinal.OnAfterLoaded();
 
                 return instance.obj;
             }

@@ -195,7 +195,7 @@ namespace SharpityEngine
         {
             // Create batch renderer
             batchRenderer = new BatchRenderer(512, this,
-                Game.Content.Load<Material>("Error.mat"));
+                Game.Content.Load<Material>("Error.json"));
 
             // Add camera
             allCameras.Add(this);

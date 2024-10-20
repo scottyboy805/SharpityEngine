@@ -548,7 +548,7 @@ namespace SharpityEngine
                 // Update all components
                 foreach (Component component in gameObject.components)
                 {
-                    if (component.Enabled == true)
+                    if (component != null && component.Enabled == true)
                     {
                         // Trigger component enabled callback
                         Component.OnComponentEnabledEvent(component, enabled);

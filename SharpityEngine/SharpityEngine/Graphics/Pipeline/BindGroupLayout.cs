@@ -3,9 +3,11 @@ using WGPU.NET;
 
 namespace SharpityEngine.Graphics.Pipeline
 {
+    [DataContract]
     public abstract class BindLayoutData
     {
         // Type
+        [DataContract]
         internal sealed class BufferBindLayoutData : BindLayoutData
         {
             // Private
@@ -52,6 +54,7 @@ namespace SharpityEngine.Graphics.Pipeline
             }
         }
 
+        [DataContract]
         internal sealed class SamplerBindLayoutData : BindLayoutData
         {
             // Private
@@ -88,6 +91,7 @@ namespace SharpityEngine.Graphics.Pipeline
             }
         }
 
+        [DataContract]
         internal sealed class TextureBindLayoutData : BindLayoutData
         {
             // Private

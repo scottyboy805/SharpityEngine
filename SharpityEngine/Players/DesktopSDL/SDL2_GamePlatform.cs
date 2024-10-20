@@ -38,7 +38,7 @@ namespace SharpityEngine.Player
         public async void RunAsync(string[] args)
         {
             // Initialize platform
-            await InitializeAsync();
+            await InitializeAsync(args);
 
             // Start game loop
             while(Game.ShouldExit == false)
@@ -71,7 +71,7 @@ namespace SharpityEngine.Player
             SDL.SDL_OpenURL(url);
         }
 
-        public override async Task InitializeAsync()
+        public override async Task InitializeAsync(string[] args)
         {
             // Init sdl
             if (SDL.SDL_Init(SDL.SDL_INIT_TIMER | SDL.SDL_INIT_VIDEO | SDL.SDL_INIT_JOYSTICK | SDL.SDL_INIT_GAMECONTROLLER | SDL.SDL_INIT_EVENTS) != 0)
@@ -80,7 +80,7 @@ namespace SharpityEngine.Player
             }
 
             // Update base
-            await base.InitializeAsync();
+            await base.InitializeAsync(args);
         }
 
         public override void Tick()

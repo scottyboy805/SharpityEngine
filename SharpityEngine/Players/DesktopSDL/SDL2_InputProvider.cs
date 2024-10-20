@@ -28,23 +28,6 @@ namespace SharpityEngine.Player
             SDL.SDL_GetVersion(out v);
 
             this.sdlVersion = new Version(v.major, v.minor, v.patch);
-
-
-            // Get joysticks
-            int joystickCount = SDL.SDL_NumJoysticks();
-
-            for (int i = 0; i < joystickCount; i++)
-            {
-                // Check for controllers
-                if (SDL.SDL_IsGameController(i) == SDL.SDL_bool.SDL_TRUE)
-                {
-                    // Create game controller
-                    Controller controller = new SDL2_Controller(i);
-
-                    // Add to input
-                    OnControllerConnectedEvent(i, controller);
-                }
-            }
         }
 
         // Methods

@@ -1,6 +1,7 @@
 ﻿using SharpityEngine.Content;
 using SharpityEngine.Graphics;
 using SharpityEngine.Input;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -15,7 +16,8 @@ namespace SharpityEngine
         private TypeManager typeManager = null;
         private ContentProvider contentProvider = null;
         private Game game = null;
-        
+        private string[] args = null;
+
         // Properties
         public abstract string APIName { get; }
         public abstract Version APIVersion { get; }
@@ -48,8 +50,10 @@ namespace SharpityEngine
             return string.Format("{0}({1}, {2})", typeof(GamePlatform).FullName, APIName, APIVersion);
         }
 
-        public virtual async Task InitializeAsync()
+        public virtual async Task InitializeAsync(string[] args)
         {
+            this.args = args;
+
             Debug.Log("Startup...");
             Debug.Log("Backend name: " + APIName);
             Debug.Log("Backend version: " + APIVersion.ToString(2));
@@ -84,7 +88,7 @@ namespace SharpityEngine
                 {
                     // Try to load assembly
                     Debug.Log(LogFilter.Content, "Loading assembly module: " + assemblyPath);
-                    Assembly gameAssembly = Assembly.LoadFrom(assemblyPath);
+                    Assembly gameAssembly = Assembly.LoadFrom(contentProvider.ContentFolder + "/"+ assemblyPath);
 
                     // Register is loaded
                     if (gameAssembly != null)
@@ -123,13 +127,11 @@ namespace SharpityEngine
 
 
             // Get preferred size
-            int screenWidth = 800;// platform.GameCommandLine.screenWidth != -1 ? platform.GameCommandLine.screenWidth : gameSettings.PreferredScreenWidth;
-            int screenHeight = 600;// platform.GameCommandLine.screenHeight != -1 ? platform.GameCommandLine.screenHeight : gameSettings.PreferredScreenHeight;
+            int screenWidth = GetArgument("width", gameSettings.PreferredScreenWidth);
+            int screenHeight = GetArgument("height", gameSettings.PreferredScreenHeight);
 
             // Get preferred fullscreen
-            bool fullscreen = false;// platform.GameCommandLine.forceFullScreen == true || platform.GameCommandLine.forceWindowed == true
-                //? (platform.GameCommandLine.forceWindowed == true ? false : platform.GameCommandLine.forceFullScreen) : gameSettings.PreferredFullscreen;
-
+            bool fullscreen = GetArgument("fullscreen", gameSettings.PreferredFullscreen);
 
             // Create game window
             GameWindow window = CreateWindow(gameSettings.GameName, screenWidth, screenHeight, fullscreen);
@@ -213,5 +215,74 @@ namespace SharpityEngine
         public abstract Game CreateGame(GameWindow window, GraphicsSurface surface, GraphicsAdapter adapter, GraphicsDevice device, InputProvider input);
 
         public abstract void OpenURL(string url);
+
+        public bool HasArgument(string name)
+        {
+            return string.IsNullOrEmpty(GetArgumentParameter(name)) == false;
+        }
+
+        public string GetArgument(string name)
+        {
+            return GetArgumentParameter(name);
+        }
+
+        public int GetArgument(string name, int defaultValue)
+        {
+            // Try to find parameter
+            string param = GetArgumentParameter(name);
+
+            // Check for found
+            int value;
+            if (string.IsNullOrEmpty(param) == false && int.TryParse(param, out value) == true)
+                return value;
+
+            return defaultValue;
+        }
+
+        public bool GetArgument(string name, bool defaultValue)
+        {
+            // Try to find parameter
+            string param = GetArgumentParameter(name);
+
+            // Check for found
+            bool value;
+            if (string.IsNullOrEmpty(param) == false && bool.TryParse(param, out value) == true)
+                return value;
+
+            return default;
+        }
+
+        private string GetArgumentParameter(string name)
+        {
+            // Try to get argument
+            if (args != null && args.Length > 0)
+            {
+                // Get search name
+                string argSearch = "-" + name;
+
+                // Try to find
+                foreach (string arg in args)
+                {
+                    // Check for index
+                    if(arg.IndexOf(argSearch) == 0)
+                    {
+                        // Get trimmed arg
+                        string argTrimmed = arg.Remove(0, argSearch.Length);
+
+                        // Check for parameters
+                        if(argTrimmed.Length > 0 && argTrimmed[0] == '=')
+                        {
+                            // Get parameter
+                            string argValue = argTrimmed.Remove(0, 1);
+
+                            // Get the result
+                            return argValue != null
+                                ? argValue : name;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
     }
 }

@@ -4,6 +4,9 @@
 	"PreferredScreenWidth": 1280,
 	"PreferredScreenHeight" : 720,
 	"PreferredFullscreen": false,
+	"GameAssemblies": [
+		"../SharpityEngine/TestGame/bin/Debug/net8.0/TestGame.dll"
+	],
 	"StartupScenes": [
 		"Scene/TestScene"
 	]

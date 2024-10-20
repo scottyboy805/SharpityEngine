@@ -1,4 +1,5 @@
 ﻿using SharpityEngine.Content;
+using SharpityEngine.Input;
 using System.Reflection;
 using System.Runtime.Serialization;
 
@@ -115,6 +116,15 @@ namespace SharpityEngine
             {
                 CheckDestroyed();
                 return game.Window;
+            }
+        }
+
+        public InputProvider Input
+        {
+            get
+            {
+                CheckDestroyed();
+                return game.Input;
             }
         }
 
