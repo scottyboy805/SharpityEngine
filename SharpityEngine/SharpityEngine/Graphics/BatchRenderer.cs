@@ -17,7 +17,7 @@ namespace SharpityEngine.Graphics
 
         private struct BatchDrawCall
         {
-            // Public
+            // Public            
             public int RenderQueue;
             public RenderPipeline ShaderRenderPipeline;
             public BindGroup MaterialBindGroup;
@@ -32,14 +32,23 @@ namespace SharpityEngine.Graphics
         private static readonly BatchDrawCallSorter drawSorter = new BatchDrawCallSorter();
 
         private int maxBatches = 512;
+        private Camera camera = null;
+        private Material activeMaterial = null;
         private Material errorMaterial = null;
         private List<BatchDrawCall> batchCalls = null;
         private RenderCommandList commandList = null;
 
+        // Properties
+        public Material ActiveMaterial
+        {
+            get { return activeMaterial; }
+        }
+
         // Constructor
-        public BatchRenderer(int maxBatches, Material errorMaterial = null)
+        public BatchRenderer(int maxBatches, Camera camera, Material errorMaterial = null)
         {
             this.maxBatches = maxBatches;
+            this.camera = camera;
             this.errorMaterial = errorMaterial;
             this.batchCalls = new List<BatchDrawCall>(maxBatches);            
         }
@@ -109,6 +118,9 @@ namespace SharpityEngine.Graphics
                     commandList.Draw(drawCall.VertexCount, 1, 0, 0);
                 }
             }
+
+            // Clear draw calls
+            batchCalls.Clear();
         }
 
         public void DrawBatched(Material material, GraphicsBuffer vertexBuffer, int vertexCount, GraphicsBuffer indexBuffer = null, int indexCount = 0, IndexFormat indexFormat = 0)
@@ -119,7 +131,7 @@ namespace SharpityEngine.Graphics
 #if DEBUG
                 material = errorMaterial;
 
-                if (errorMaterial == null)
+                if (errorMaterial == null || errorMaterial.Shader == null)
                     return;
 #else
                 return;
@@ -139,8 +151,12 @@ namespace SharpityEngine.Graphics
                 IndexFormat = indexFormat,
             });
 
+            // Update active material state
+            Material last = activeMaterial;
+            activeMaterial = material;
+
             // Auto flush
-            if (batchCalls.Count >= maxBatches)
+            if (batchCalls.Count >= maxBatches || (batchCalls.Count > 0 && last != activeMaterial))
                 Flush();
         }
     }

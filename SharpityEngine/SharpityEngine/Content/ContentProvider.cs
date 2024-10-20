@@ -136,8 +136,8 @@ namespace SharpityEngine.Content
             GameScene scene = await LoadAsync<GameScene>(contentPathOrGuid, bundle);
 
             // Check for success
-            //if (scene != null && autoActivate == true)
-            //    scene.Activate();
+            if (scene != null && autoActivate == true)
+                scene.Activate();
 
             return scene;
         }

@@ -194,7 +194,7 @@ namespace SharpityEngine
         public Camera()
         {
             // Create batch renderer
-            batchRenderer = new BatchRenderer(512,
+            batchRenderer = new BatchRenderer(512, this,
                 Game.Content.Load<Material>("Error.mat"));
 
             // Add camera
@@ -202,6 +202,9 @@ namespace SharpityEngine
 
             // Sort by render queue
             allCameras.Sort(cameraSorter);
+
+            // Create matrix
+            CreateViewProjectionMatrix();
         }
 
         // Methods
@@ -321,7 +324,7 @@ namespace SharpityEngine
         private void RenderPass(CommandList commandList, TextureView renderView, in Matrix4 viewProjection)
         {
             // Check for depth texture before starting render pass
-            if(depthTextureView == null)
+            if (depthTextureView == null)
             {
                 // Create depth texture
                 Texture depthTexture = Game.GraphicsDevice.CreateTexture2D(RenderWidth, RenderHeight, TextureFormat.Depth32Float, TextureUsage.RenderAttachment);
@@ -332,7 +335,7 @@ namespace SharpityEngine
             RenderCommandList renderPass = commandList.BeginRenderPass(
                 new ColorAttachment(renderView, clearColor),
                 new DepthStencilAttachment(depthTextureView));
-
+            
             // Start batch
             batchRenderer.Begin(renderPass);
             {
@@ -350,6 +353,9 @@ namespace SharpityEngine
             }
             // End batch
             batchRenderer.End();
+
+            // End the pass
+            renderPass.End();            
 
             // Release render pass
             renderPass.Dispose();

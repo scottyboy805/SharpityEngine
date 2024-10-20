@@ -7,7 +7,13 @@
 			"Components": [
 				{
 					"Type": "SharpityEngine.Camera",
-				},
+				}
+			]
+		},
+		{
+			"Type": "SharpityEngine.GameObject",
+			"Name": "Main Camera",
+			"Components": [
 				{
 					"Type": "SharpityEngine.MeshRenderer",
 					"Mesh": {

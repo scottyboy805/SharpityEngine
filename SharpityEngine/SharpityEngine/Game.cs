@@ -22,7 +22,6 @@ namespace SharpityEngine
         private GraphicsDevice graphicsDevice = null;
         private GameModules gameModules = null;
 
-        private BatchRenderer batchRenderer = null;
         private List<IGameUpdate> scheduledStartElements = new List<IGameUpdate>(256);
         private List<IGameUpdate> scheduledUpdateElements = new List<IGameUpdate>(256);
         private List<GameElement> scheduledDestroyDelayElements = new List<GameElement>();
@@ -134,10 +133,6 @@ namespace SharpityEngine
             frameUpdateTimer = Stopwatch.StartNew();
             frameRenderTimer = Stopwatch.StartNew();
 
-            // Create batch renderer
-            batchRenderer = new BatchRenderer(512,
-                Content.Load<Material>("Error.mat"));
-
             // Initialize modules
             gameModules.OnStart();
         }
@@ -150,25 +145,14 @@ namespace SharpityEngine
 
             // Frame loop start
             gameModules.OnFrameStart();
-            //OnFrameStart();
-
-            //// Frame start
-            //gameModules.OnFrameStart();
-            //{
-
-            //    // Update the platform
-            //    //platform.Tick();
 
 
             // Update and draw
             DoGameUpdate();
             DoGameDraw();
-            //}
-            //// Frame end
-            //gameModules.OnFrameEnd();
+
 
             gameModules.OnFrameEnd();
-            //OnFrameEnd();
 
             // Update destroyed elements
             //DoScheduledDestroyedElements(gameTime);
@@ -219,10 +203,7 @@ namespace SharpityEngine
         {
             // ### Render loop start
             frameRenderTimer.Restart();
-            //            OnFrameRenderBegin();
 
-
-            // Get cameras for rendering
 
             // Get cameras for rendering
             IReadOnlyList<Camera> activeSortedRenderingCameras = Camera.AllActiveCameras;
@@ -245,7 +226,6 @@ namespace SharpityEngine
             {
                 // Render the camera
                 camera.Render(commandList);
-
             }
 
             // Finish drawing
@@ -262,43 +242,6 @@ namespace SharpityEngine
             // Present to display
             GraphicsSurface.Present();
 
-            //            // Clear screen
-            //            canvas.Clear(GraphicsDevice.ClearColor);
-            //            {
-            //                // Before render
-            //                OnFramePostRender(canvas);
-            //                {
-            //                    // Before draw
-            //                    gameModules.OnBeforeDraw();
-
-            //                    // Draw
-            //                    gameModules.OnDraw(canvas);
-
-            //                    // Draw stats
-            //                    if (Metrics.DrawStats == true)
-            //                        Metrics.DrawStatsText(canvas);
-
-            //                    // After draw
-            //                    gameModules.OnAfterDraw();
-            //                }
-            //                // After render
-            //                OnFramePostRender(canvas);
-
-
-            //                // Display fps and extra info in game window title bar
-            //#if DEBUG && !SIMPLE2D_WEB
-            //                // Check for title changed
-            //                if (window.Title.StartsWith(windowTitle) == false)
-            //                    windowTitle = window.Title;
-
-            //                window.Title = string.Format("{0} - Platform API ({1}, {2}) - Render API ({3}, {4})", windowTitle, platform.ApiName, platform.ApiVersion, graphicsDevice.ApiName, graphicsDevice.ApiVersion);
-            //#endif
-            //            }
-            //            // Update render timings
-            //            renderDuration = frameRenderTimer.Elapsed;
-
-            //            // Render end
-            //            OnFrameRenderEnd();
 
             gameModules.OnAfterDraw();
         }
@@ -307,19 +250,7 @@ namespace SharpityEngine
         {
             Debug.Log("Shutdown...");
 
-
-            //// Destroy game scenes
-            //foreach (GameScene gameScene in modules.GetModulesOfType<GameScene>())
-            //{
-            //    gameScene.Destroy();
-            //}
-
-            //// Force all waiting elements to be destroyed
-            //DoScheduledDestroyedElements(null);
-
-
-            //// Shutdown modules
-            //gameModules.OnDestroy();
+            // Shutdown modules
             gameModules.OnDestroy();
 
             // Close window

@@ -60,19 +60,20 @@ namespace SharpityEngine.Player
 
 
             FileContentProvider content = new FileContentProvider("../../../../../../Content");// Environment.CurrentDirectory);
+            content.TypeManager.RegisterAssembly(typeof(GameScene).Assembly);
             SharpityEngine.Game game = new SDL2_Game(new SharpityEngine.TypeManager(), new SDL2_GamePlatform(content), null, surface, adapter, device);
             
 
 
             // Create mesh triangle
-            Mesh mesh = new Mesh();
-            Mesh.SubMesh subMesh = mesh.CreateSubMesh();
-            subMesh.Vertices.Add(new(-1, -1, 0)); subMesh.Vertices.Add(new(1, -1, 0)); subMesh.Vertices.Add(new (0, 1, 0));
-            subMesh.Colors.Add(new(1, 1, 0, 1)); subMesh.Colors.Add(new(0, 1, 1, 1)); subMesh.Colors.Add(new(1, 0, 1, 1));
-            subMesh.UVs_0.Add(new(-.2f, 1.0f)); subMesh.UVs_0.Add(new(1.2f, 1.0f)); subMesh.UVs_0.Add(new(0.5f, -0.5f));
-            mesh.Apply();
+            //Mesh mesh = new Mesh();
+            //Mesh.SubMesh subMesh = mesh.CreateSubMesh();
+            //subMesh.Vertices.Add(new(-1, -1, 0)); subMesh.Vertices.Add(new(1, -1, 0)); subMesh.Vertices.Add(new (0, 1, 0));
+            //subMesh.Colors.Add(new(1, 1, 0, 1)); subMesh.Colors.Add(new(0, 1, 1, 1)); subMesh.Colors.Add(new(1, 0, 1, 1));
+            //subMesh.UVs_0.Add(new(-.2f, 1.0f)); subMesh.UVs_0.Add(new(1.2f, 1.0f)); subMesh.UVs_0.Add(new(0.5f, -0.5f));
+            //mesh.Apply();
 
-            GraphicsBuffer vertexBuffer = subMesh.vertexBuffer;
+            //GraphicsBuffer vertexBuffer = subMesh.vertexBuffer;
 
             UniformBuffer uniformBufferData = new UniformBuffer
             {
@@ -87,8 +88,8 @@ namespace SharpityEngine.Player
             Texture texture = content.Load<Texture>("WGPU-Logo.png");
 
             // Load mesh content
-            Mesh cubeMesh = content.Load<Mesh>("Cube.fbx");
-            vertexBuffer = cubeMesh.SubMeshes[0].vertexBuffer;
+            //Mesh cubeMesh = content.Load<Mesh>("Cube.fbx");
+            //vertexBuffer = cubeMesh.SubMeshes[0].vertexBuffer;
 
             // Sampler
             Sampler sampler = device.CreateSampler(WrapMode.ClampToEdge, FilterMode.Linear);
@@ -96,7 +97,7 @@ namespace SharpityEngine.Player
             // Shader
             Shader shader = device.CreateShaderSource(content.LoadDataText("shader.wgsl"));
 
-            Shader errorShader = device.CreateShaderSource(content.LoadDataText("Error.wgsl"));
+            //Shader errorShader = device.CreateShaderSource(content.LoadDataText("Error.wgsl"));
 
             // Material
             Material material = new Material(shader);
@@ -106,11 +107,11 @@ namespace SharpityEngine.Player
             material.SetTexture(texture, 2);
             material.Apply();
 
-            Material errorMaterial = new Material(errorShader);
-            errorMaterial.SetBuffer(uniformBuffer, 0);
-            errorMaterial.SetSampler(sampler, 1);
-            errorMaterial.SetTexture(texture, 2);
-            errorMaterial.Apply();
+            //Material errorMaterial = new Material(errorShader);
+            //errorMaterial.SetBuffer(uniformBuffer, 0);
+            //errorMaterial.SetSampler(sampler, 1);
+            //errorMaterial.SetTexture(texture, 2);
+            //errorMaterial.Apply();
 
             TextureFormat swapChainFormat = surface.GetPreferredFormat(adapter);
 
@@ -129,17 +130,25 @@ namespace SharpityEngine.Player
 
 
             // ECS
-            GameScene gameScene = new GameScene();
-            Game.Current.GameModules.AddModule(gameScene);
+            GameScene scene = content.LoadScene("Scene/TestScene.json");
+            //GameScene gameScene = new GameScene();
+            //Game.Current.GameModules.AddModule(gameScene);
 
-            GameObject gameObject = gameScene.CreateEmptyObject("Cube");
-            MeshRenderer meshRenderer = gameObject.CreateComponent<MeshRenderer>();
-            meshRenderer.Mesh = cubeMesh;
-            meshRenderer.Material = material;// errorMaterial;// material;
+            //GameObject gameObject = gameScene.CreateEmptyObject("Cube");
+            //MeshRenderer meshRenderer = gameObject.CreateComponent<MeshRenderer>();
+            //meshRenderer.Mesh = cubeMesh;
+            //meshRenderer.Material = material;// errorMaterial;// material;
 
-            GameObject cameraObject = gameScene.CreateEmptyObject("Camera");
-            Camera camera = cameraObject.CreateComponent<Camera>();
-
+            //GameObject cameraObject = gameScene.CreateEmptyObject("Camera");
+            //Camera camera = cameraObject.CreateComponent<Camera>();
+            MeshRenderer meshRenderer = scene.GameObjects[1].GetComponent<MeshRenderer>();
+            Camera camera = Camera.MainCamera;
+            //meshRenderer.Material.Apply();
+            //meshRenderer.Material.SetBuffer(uniformBuffer, 0);
+            //meshRenderer.Material.SetBuffer(meshRenderer.Material.uniformBuffer, 0);
+            meshRenderer.Material.Apply();
+            //meshRenderer.Material = material;
+            //GraphicsBuffer uniformBuffer = meshRenderer.Material.uniformBuffer;
 
             var startTime = DateTime.Now;
 
@@ -240,7 +249,7 @@ namespace SharpityEngine.Player
 
                 uniformBufferSpan[0] = uniformBufferData;
 
-                queue.WriteBuffer<UniformBuffer>(uniformBuffer, 0, uniformBufferSpan);
+                queue.WriteBuffer<UniformBuffer>(meshRenderer.Material.GetBuffer(0), 0, uniformBufferSpan);
 
                 var commandBuffer = commandList.Finish(); //encoder.Finish(null);
 

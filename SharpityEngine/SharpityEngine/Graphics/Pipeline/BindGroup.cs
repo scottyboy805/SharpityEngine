@@ -160,7 +160,7 @@ namespace SharpityEngine.Graphics.Pipeline
             // Properties
             public new Texture Texture
             {
-                get { return Texture; }
+                get { return texture; }
             }
 
             public TextureAspect Aspect
