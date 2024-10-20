@@ -61,7 +61,7 @@ namespace SharpityEngine.Player
 
             FileContentProvider content = new FileContentProvider("../../../../../../Content");// Environment.CurrentDirectory);
             content.TypeManager.RegisterAssembly(typeof(GameScene).Assembly);
-            SharpityEngine.Game game = new SDL2_Game(new SharpityEngine.TypeManager(), new SDL2_GamePlatform(content), null, surface, adapter, device);
+            SharpityEngine.Game game = new SDL2_Game(new SharpityEngine.TypeManager(), new SDL2_GamePlatform(content), null, surface, adapter, device, new SDL2_InputProvider());
             
 
 

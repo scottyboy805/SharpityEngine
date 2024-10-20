@@ -1,5 +1,6 @@
 ﻿using SharpityEngine.Content;
 using SharpityEngine.Graphics;
+using SharpityEngine.Input;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -156,9 +157,13 @@ namespace SharpityEngine
             surface.Prepare(device, PresentMode.Fifo, swapSurfaceFormat, TextureUsage.RenderAttachment);
 
 
+            // Create the input
+            Debug.Log(LogFilter.Input, "Initialize input...");
+            InputProvider input = CreateInput();
+
 
             // Create the game provider
-            game = CreateGame(window, surface, adapter, device);
+            game = CreateGame(window, surface, adapter, device, input);
 
             // Preload scenes
             Debug.LogF(LogFilter.Content, "Loading startup scenes ({0})...", gameSettings.StartupScenes.Count);
@@ -203,7 +208,9 @@ namespace SharpityEngine
 
         public abstract GameWindow CreateWindow(string title, int width, int height, bool fullscreen);
 
-        public abstract Game CreateGame(GameWindow window, GraphicsSurface surface, GraphicsAdapter adapter, GraphicsDevice device);
+        public abstract InputProvider CreateInput();
+
+        public abstract Game CreateGame(GameWindow window, GraphicsSurface surface, GraphicsAdapter adapter, GraphicsDevice device, InputProvider input);
 
         public abstract void OpenURL(string url);
     }

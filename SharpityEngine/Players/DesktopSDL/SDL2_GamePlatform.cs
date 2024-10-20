@@ -1,7 +1,7 @@
 ﻿using SDL2;
-using SharpityEngine;
 using SharpityEngine.Content;
 using SharpityEngine.Graphics;
+using SharpityEngine.Input;
 
 namespace SharpityEngine.Player
 {
@@ -9,7 +9,8 @@ namespace SharpityEngine.Player
     {
         // Private
         private Version sdlVersion = null;
-        private SDL2_GameWindow sdlWindow = null;        
+        private SDL2_GameWindow sdlWindow = null;
+        private SDL2_InputProvider sdlInput = null;
 
         // Properties
         public override string APIName => "SDL2";
@@ -55,9 +56,14 @@ namespace SharpityEngine.Player
             return (sdlWindow = new SDL2_GameWindow(title, width, height, fullscreen));
         }
 
-        public override Game CreateGame(GameWindow window, GraphicsSurface surface, GraphicsAdapter adapter, GraphicsDevice graphicsDevice)
+        public override InputProvider CreateInput()
         {
-            return new SDL2_Game(TypeManager, this, window, surface, adapter, graphicsDevice);
+            return (sdlInput = new SDL2_InputProvider());
+        }
+
+        public override Game CreateGame(GameWindow window, GraphicsSurface surface, GraphicsAdapter adapter, GraphicsDevice graphicsDevice, InputProvider input)
+        {
+            return new SDL2_Game(TypeManager, this, window, surface, adapter, graphicsDevice, input);
         }
 
         public override void OpenURL(string url)
@@ -97,68 +103,68 @@ namespace SharpityEngine.Player
                             sdlWindow.PlatformWindowEvent(e.window);
                             break;
                         }
-                        
+
 
                     // Input Events
-                    //case SDL.SDL_EventType.SDL_KEYDOWN:
-                    //case SDL.SDL_EventType.SDL_KEYUP:
-                    //    {
-                    //        input?.SDLKeyEvent(e.key);
-                    //        break;
-                    //    }
-                    //case SDL.SDL_EventType.SDL_TEXTEDITING:
-                    //    {
-                    //        input?.SDLTextEditEvent(e.edit);
-                    //        break;
-                    //    }
-                    //case SDL.SDL_EventType.SDL_TEXTINPUT:
-                    //    {
-                    //        input?.SDLTextInputEvent(e.text);
-                    //        break;
-                    //    }
-                    //case SDL.SDL_EventType.SDL_KEYMAPCHANGED:
-                    //case SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN:
-                    //case SDL.SDL_EventType.SDL_MOUSEBUTTONUP:
-                    //    {
-                    //        input?.SDLMouseButtonEvent(e.button);
-                    //        break;
-                    //    }
-                    //case SDL.SDL_EventType.SDL_MOUSEMOTION:
-                    //    {
-                    //        input?.SDLMouseMotionEvent(e.motion);
-                    //        break;
-                    //    }
+                    case SDL.SDL_EventType.SDL_KEYDOWN:
+                    case SDL.SDL_EventType.SDL_KEYUP:
+                        {
+                            sdlInput?.SDLKeyEvent(e.key);
+                            break;
+                        }
+                    case SDL.SDL_EventType.SDL_TEXTEDITING:
+                        {
+                            sdlInput?.SDLTextEditEvent(e.edit);
+                            break;
+                        }
+                    case SDL.SDL_EventType.SDL_TEXTINPUT:
+                        {
+                            sdlInput?.SDLTextInputEvent(e.text);
+                            break;
+                        }
+                    case SDL.SDL_EventType.SDL_KEYMAPCHANGED:
+                    case SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN:
+                    case SDL.SDL_EventType.SDL_MOUSEBUTTONUP:
+                        {
+                            sdlInput?.SDLMouseButtonEvent(e.button);
+                            break;
+                        }
+                    case SDL.SDL_EventType.SDL_MOUSEMOTION:
+                        {
+                            sdlInput?.SDLMouseMotionEvent(e.motion);
+                            break;
+                        }
 
-                    //case SDL.SDL_EventType.SDL_MOUSEWHEEL:
-                    //    {
-                    //        input?.SDLMouseWheelEvent(e.wheel);
-                    //        break;
-                    //    }
-                    //case SDL.SDL_EventType.SDL_JOYAXISMOTION:
-                    //case SDL.SDL_EventType.SDL_JOYBALLMOTION:
-                    //case SDL.SDL_EventType.SDL_JOYHATMOTION:
-                    //case SDL.SDL_EventType.SDL_JOYBUTTONDOWN:
-                    //case SDL.SDL_EventType.SDL_JOYBUTTONUP:
+                    case SDL.SDL_EventType.SDL_MOUSEWHEEL:
+                        {
+                            sdlInput?.SDLMouseWheelEvent(e.wheel);
+                            break;
+                        }
+                    case SDL.SDL_EventType.SDL_JOYAXISMOTION:
+                    case SDL.SDL_EventType.SDL_JOYBALLMOTION:
+                    case SDL.SDL_EventType.SDL_JOYHATMOTION:
+                    case SDL.SDL_EventType.SDL_JOYBUTTONDOWN:
+                    case SDL.SDL_EventType.SDL_JOYBUTTONUP:
                     //case SDL.SDL_EventType.SDL_JOYDEVICEADDED:
                     //case SDL.SDL_EventType.SDL_JOYDEVICEREMOVED:
-                    //case SDL.SDL_EventType.SDL_CONTROLLERAXISMOTION:
-                    //    {
-                    //        input?.SDLControllerAxisEvent(e.caxis);
-                    //        break;
-                    //    }
-                    //case SDL.SDL_EventType.SDL_CONTROLLERBUTTONDOWN:
-                    //case SDL.SDL_EventType.SDL_CONTROLLERBUTTONUP:
-                    //    {
-                    //        input?.SDLControllerButtonEvent(e.cbutton);
-                    //        break;
-                    //    }
+                    case SDL.SDL_EventType.SDL_CONTROLLERAXISMOTION:
+                        {
+                            sdlInput?.SDLControllerAxisEvent(e.caxis);
+                            break;
+                        }
+                    case SDL.SDL_EventType.SDL_CONTROLLERBUTTONDOWN:
+                    case SDL.SDL_EventType.SDL_CONTROLLERBUTTONUP:
+                        {
+                            sdlInput?.SDLControllerButtonEvent(e.cbutton);
+                            break;
+                        }
 
-                    //case SDL.SDL_EventType.SDL_CONTROLLERDEVICEADDED:
-                    //case SDL.SDL_EventType.SDL_CONTROLLERDEVICEREMOVED:
-                    //    {
-                    //        input?.SDL_ControllerDeviceEvent(e.cdevice);
-                    //        break;
-                    //    }
+                    case SDL.SDL_EventType.SDL_CONTROLLERDEVICEADDED:
+                    case SDL.SDL_EventType.SDL_CONTROLLERDEVICEREMOVED:
+                        {
+                            sdlInput?.SDL_ControllerDeviceEvent(e.cdevice);
+                            break;
+                        }
                     case SDL.SDL_EventType.SDL_CONTROLLERDEVICEREMAPPED:
                         {
                             //input.ProcessEvent(e);

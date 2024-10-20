@@ -1,6 +1,5 @@
 ﻿using SharpityEngine.Graphics.Pipeline;
 using System.Runtime.Serialization;
-using System.Xml.Linq;
 using WGPU.NET;
 
 namespace SharpityEngine.Graphics

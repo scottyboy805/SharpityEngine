@@ -1,6 +1,7 @@
 ﻿using SharpityEngine;
 using SharpityEngine.Content;
 using SharpityEngine.Graphics;
+using SharpityEngine.Input;
 
 namespace SharpityEngine.Player
 {
@@ -25,8 +26,8 @@ namespace SharpityEngine.Player
         }
 
         // Constructor
-        public SDL2_Game(TypeManager typeManager, GamePlatform platform, GameWindow window, GraphicsSurface graphicsSurface, GraphicsAdapter graphicsAdapter, GraphicsDevice graphicsDevice)
-            : base(typeManager, platform, window, graphicsSurface, graphicsAdapter, graphicsDevice)
+        public SDL2_Game(TypeManager typeManager, GamePlatform platform, GameWindow window, GraphicsSurface graphicsSurface, GraphicsAdapter graphicsAdapter, GraphicsDevice graphicsDevice, InputProvider input)
+            : base(typeManager, platform, window, graphicsSurface, graphicsAdapter, graphicsDevice, input)
         {
             isRunning = true;
 

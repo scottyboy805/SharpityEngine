@@ -1,6 +1,7 @@
 ﻿using SharpityEngine.Content;
 using SharpityEngine.Graphics;
 using SharpityEngine.Graphics.Pipeline;
+using SharpityEngine.Input;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
@@ -20,6 +21,7 @@ namespace SharpityEngine
         private GraphicsSurface graphicsSurface = null;
         private GraphicsAdapter graphicsAdapter = null;
         private GraphicsDevice graphicsDevice = null;
+        private InputProvider input = null;
         private GameModules gameModules = null;
 
         private List<IGameUpdate> scheduledStartElements = new List<IGameUpdate>(256);
@@ -88,6 +90,11 @@ namespace SharpityEngine
             get { return graphicsDevice; }
         }
 
+        public InputProvider Input
+        {
+            get { return input; }
+        }
+
         internal GameModules GameModules
         {
             get { return gameModules; }
@@ -110,7 +117,7 @@ namespace SharpityEngine
         }
 
         // Constructor
-        internal Game(TypeManager typeManager, GamePlatform platform, GameWindow window, GraphicsSurface graphicsSurface, GraphicsAdapter graphicsAdapter, GraphicsDevice graphicsDevice)
+        internal Game(TypeManager typeManager, GamePlatform platform, GameWindow window, GraphicsSurface graphicsSurface, GraphicsAdapter graphicsAdapter, GraphicsDevice graphicsDevice, InputProvider input)
         {
             // Store current instance
             current = this;
@@ -121,6 +128,7 @@ namespace SharpityEngine
             this.graphicsSurface = graphicsSurface; 
             this.graphicsAdapter = graphicsAdapter;
             this.graphicsDevice = graphicsDevice;
+            this.input = input;
             this.gameModules = new GameModules();
         }
 

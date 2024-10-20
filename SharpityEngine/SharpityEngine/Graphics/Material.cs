@@ -6,7 +6,6 @@ namespace SharpityEngine.Graphics
     public sealed class Material : GameAsset
     {
         // Internal
-        //internal GraphicsBuffer uniformBuffer = null;
         internal BindGroup bindGroup = null;
 
         // Private
@@ -61,13 +60,6 @@ namespace SharpityEngine.Graphics
                 bindGroup.Dispose();
                 bindGroup = null;
             }
-
-            // Release uniform buffer
-            //if(uniformBuffer != null)
-            //{
-            //    uniformBuffer.Dispose();
-            //    uniformBuffer = null;
-            //}
         }
 
         public void SetBuffer(GraphicsBuffer buffer, int slot, long offset = 0, long size = -1)
@@ -145,10 +137,6 @@ namespace SharpityEngine.Graphics
             // Check for shader
             if (shader == null || shader.renderPipeline == null)
                 return;
-
-            //// Create buffer
-            //if(uniformBuffer == null)
-            //    uniformBuffer = Game.GraphicsDevice.CreateBuffer(sizeof(Matrix4), BufferUsage.Uniform | BufferUsage.CopyDst);
 
             // Create bind group
             bindGroup = Game.GraphicsDevice.CreateBindGroup(shader.bindGroupLayout, bindingData);
