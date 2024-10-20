@@ -68,6 +68,10 @@ namespace SharpityEngine.Graphics
             // Draw all buffered
             Flush();
 
+            Span<Matrix4> mat = stackalloc Matrix4[1];
+            mat[0] = Matrix4.Translate(0, 0, -5) * camera.ViewProjectionMatrix;
+            Game.Current.GraphicsDevice.Queue.WriteBuffer<Matrix4>(activeMaterial.GetBuffer(0), 0, mat);
+
             // End command list
             this.commandList.End();
             this.commandList = null;

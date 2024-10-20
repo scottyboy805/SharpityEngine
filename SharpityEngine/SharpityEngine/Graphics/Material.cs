@@ -48,7 +48,7 @@ namespace SharpityEngine.Graphics
         protected override void OnLoaded()
         {
             // Update binding
-            //UpdateBindData();
+            UpdateBindData();
         }
 
         protected override void OnDestroy()
@@ -94,9 +94,37 @@ namespace SharpityEngine.Graphics
 
         public GraphicsBuffer GetBuffer(int slot)
         {
+            // Check for out of bounds
+            if (slot < 0 || slot >= bindingData.Length)
+                throw new IndexOutOfRangeException(nameof(slot));
+
             // Try to get the buffer if bound
             return (bindingData[slot] is BindData.BufferBindData buffer)
                 ? buffer.Buffer
+                : null;
+        }
+
+        public Sampler GetSampler(int slot)
+        {
+            // Check for out of bounds
+            if (slot < 0 || slot >= bindingData.Length)
+                throw new IndexOutOfRangeException(nameof(slot));
+
+            // Try to get the buffer if bound
+            return (bindingData[slot] is BindData.SamplerBindData sampler)
+                ? sampler.Sampler
+                : null;
+        }
+
+        public Texture GetTexture(int slot)
+        {
+            // Check for out of bounds
+            if (slot < 0 || slot >= bindingData.Length)
+                throw new IndexOutOfRangeException(nameof(slot));
+
+            // Try to get the buffer if bound
+            return (bindingData[slot] is BindData.TextureBindData texture)
+                ? texture.Texture
                 : null;
         }
 
